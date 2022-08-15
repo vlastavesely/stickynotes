@@ -2,6 +2,7 @@
 #define __NOTES_APPLICATION_H
 
 #include <gtk/gtk.h>
+#include "stickynote.h"
 
 #if defined (__cplusplus)
 extern "C" {
@@ -26,6 +27,9 @@ typedef struct _NotesApplicationClass NotesApplicationClass;
 
 GType notes_application_get_type(void);
 NotesApplication *notes_application_new(void);
+
+StickyNote *notes_application_open_note(NotesApplication *application,
+					const char *name);
 
 #if defined (__cplusplus)
 }

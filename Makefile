@@ -6,7 +6,7 @@ LIBNAMES = gtk+-3.0
 CFLAGS = $(shell pkg-config --cflags $(LIBNAMES)) -Wall -O2
 LFLAGS = $(shell pkg-config --libs $(LIBNAMES))
 
-OBJECTS = main.o application.o
+OBJECTS = main.o application.o stickynote.o
 
 
 all: main data/gschemas.compiled
