@@ -1,4 +1,5 @@
 /main
+/resources.c
 /data/*.compiled
 *~
 *.o

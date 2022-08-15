@@ -27,7 +27,7 @@ static StickyNote *create_note(NotesApplication *application, const char *name)
 {
 	StickyNote *note;
 
-	note = stickynote_new();
+	note = stickynote_new(name);
 	gtk_widget_show(GTK_WIDGET(note));
 	g_hash_table_insert(application->notes, strdup(name), note);
 

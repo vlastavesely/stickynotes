@@ -7,4 +7,10 @@
       <description>List of notes known to the program.</description>
     </key>
   </schema>
+  <schema id="com.vlastavesely.stickynotes.note">
+    <key name="title" type="s">
+      <default>''</default>
+      <summary>The title of the note</summary>
+    </key>
+  </schema>
 </schemalist>

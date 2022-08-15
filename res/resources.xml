@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/com/vlastavesely/stickynotes/">
+    <file compressed="false">stickynote.ui</file>
+    <file preprocess="to-pixdata" compressed="true">locked.png</file>
+    <file preprocess="to-pixdata" compressed="true">unlocked.png</file>
+    <file preprocess="to-pixdata" compressed="true">close.png</file>
+    <file preprocess="to-pixdata" compressed="true">resize-sw.png</file>
+    <file preprocess="to-pixdata" compressed="true">resize-se.png</file>
+  </gresource>
+</gresources>
