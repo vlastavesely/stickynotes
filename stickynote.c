@@ -1,5 +1,6 @@
 #include "compat.h"
 #include "stickynote.h"
+#include <gtksourceview/gtksource.h>
 
 struct StickyNote {
 	GtkWindow parent;
@@ -8,6 +9,8 @@ struct StickyNote {
 	GtkWidget *move_box;
 	GtkWidget *resize_sw;
 	GtkWidget *resize_se;
+	GtkWidget *text_view_area;
+	GtkWidget *text_view;
 	int width, height, x, y;
 };
 
@@ -18,6 +21,7 @@ struct StickyNoteClass {
 enum {
 	PROP_NAME = 1,
 	PROP_TITLE,
+	PROP_TEXT,
 	PROP_WIDTH,
 	PROP_HEIGHT,
 	PROP_X,
@@ -28,6 +32,42 @@ enum {
 static GParamSpec *obj_properties[N_PROPERTIES] = {NULL};
 
 G_DEFINE_TYPE(StickyNote, stickynote, GTK_TYPE_WINDOW);
+
+static char *get_text(GtkSourceView *view)
+{
+	GtkTextIter start, end;
+	GtkTextBuffer *buffer;
+
+	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view));
+	gtk_text_buffer_get_start_iter(buffer, &start);
+	gtk_text_buffer_get_end_iter(buffer, &end);
+
+	return gtk_text_buffer_get_text(buffer, &start, &end, true);
+}
+
+static void set_text(GtkSourceView *view, const char *text)
+{
+	GtkTextBuffer *buffer;
+
+	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view));
+	gtk_text_buffer_set_text(buffer, text, -1);
+}
+
+static GtkWidget *create_text_view()
+{
+	GtkWidget *view;
+
+	view = gtk_source_view_new();
+	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(view), GTK_WRAP_WORD);
+	gtk_widget_show_all(view);
+
+	return view;
+}
+
+static void text_changed(GtkTextBuffer *buffer, void *data)
+{
+	g_object_notify(G_OBJECT(data), "text");
+}
 
 static void load_settings_for_name(StickyNote *note, const char *name)
 {
@@ -81,17 +121,25 @@ static bool save_geometry(GtkWidget *widget, GdkEventConfigure *event, void *dat
 	GObject *object = G_OBJECT(widget);
 	StickyNote *note = STICKYNOTE(widget);
 
-	note->width = event->width;
-	g_object_notify(object, "width");
+	if (note->width != event->width) {
+		note->width = event->width;
+		g_object_notify(object, "width");
+	}
 
-	note->height = event->height;
-	g_object_notify(object, "height");
+	if (note->height != event->height) {
+		note->height = event->height;
+		g_object_notify(object, "height");
+	}
 
-	note->x = event->x;
-	g_object_notify(object, "x");
+	if (note->x != event->x) {
+		note->x = event->x;
+		g_object_notify(object, "x");
+	}
 
-	note->y = event->y;
-	g_object_notify(object, "y");
+	if (note->y != event->y) {
+		note->y = event->y;
+		g_object_notify(object, "y");
+	}
 
 	return false;
 }
@@ -118,6 +166,11 @@ static void set_property(GObject *object, unsigned int prop_id,
 	case PROP_TITLE:
 		str = g_value_get_string(value);
 		gtk_label_set_label(GTK_LABEL(note->title_label), str);
+		break;
+
+	case PROP_TEXT:
+		str = g_value_get_string(value);
+		set_text(GTK_SOURCE_VIEW(note->text_view), str);
 		break;
 
 	case PROP_WIDTH:
@@ -151,11 +204,18 @@ static void get_property(GObject *object, unsigned int prop_id, GValue *value,
 {
 	StickyNote *note = STICKYNOTE(object);
 	const char *str;
+	char *text;
 
 	switch (prop_id) {
 	case PROP_TITLE:
 		str = gtk_label_get_label(GTK_LABEL(note->title_label));
 		g_value_set_string(value, str);
+		break;
+
+	case PROP_TEXT:
+		text = get_text(GTK_SOURCE_VIEW(note->text_view));
+		g_value_set_string(value, text);
+		free(text);
 		break;
 
 	case PROP_WIDTH:
@@ -182,7 +242,16 @@ static void get_property(GObject *object, unsigned int prop_id, GValue *value,
 
 static void stickynote_init(StickyNote *note)
 {
+	GtkTextBuffer *buffer;
+
 	gtk_widget_init_template(GTK_WIDGET(note));
+
+	note->text_view = create_text_view();
+	gtk_container_add(GTK_CONTAINER(note->text_view_area), note->text_view);
+
+	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(note->text_view));
+	g_signal_connect(G_OBJECT(buffer), "changed",
+			 G_CALLBACK(text_changed), note);
 
 	g_signal_connect(G_OBJECT(note->resize_sw), "button-press-event",
 			 G_CALLBACK(stickynote_resize), note);
@@ -218,6 +287,9 @@ static void constructed(GObject *object)
 	g_settings_bind(settings, "title", note, "title",
 			G_SETTINGS_BIND_DEFAULT);
 
+	g_settings_bind(settings, "text", note, "text",
+			G_SETTINGS_BIND_DEFAULT);
+
 	g_settings_bind(settings, "width", note, "width",
 			G_SETTINGS_BIND_DEFAULT);
 
@@ -249,6 +321,9 @@ static void stickynote_class_init(StickyNoteClass *klass)
 	gtk_widget_class_bind_template_child(widget_class,
 					     StickyNote, resize_se);
 
+	gtk_widget_class_bind_template_child(widget_class,
+					     StickyNote, text_view_area);
+
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->finalize = finalise;
@@ -260,6 +335,10 @@ static void stickynote_class_init(StickyNoteClass *klass)
 
 	obj_properties[PROP_TITLE] = g_param_spec_string("title",
 			"Title", "Public title of the note", "",
+			G_PARAM_READABLE | G_PARAM_WRITABLE);
+
+	obj_properties[PROP_TEXT] = g_param_spec_string("text",
+			"Text", "Text of the note", "",
 			G_PARAM_READABLE | G_PARAM_WRITABLE);
 
 	obj_properties[PROP_WIDTH] = g_param_spec_int("width",

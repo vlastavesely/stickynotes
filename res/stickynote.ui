@@ -83,21 +83,12 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScrolledWindow">
+          <object class="GtkScrolledWindow" id="text_view_area">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="shadow-type">in</property>
             <child>
-              <object class="GtkTextView" id="text_view">
-                <property name="name">text_view</property>
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="wrap-mode">word</property>
-                <property name="left-margin">5</property>
-                <property name="right-margin">5</property>
-                <property name="top-margin">5</property>
-                <property name="bottom-margin">5</property>
-              </object>
+              <placeholder/>
             </child>
           </object>
           <packing>

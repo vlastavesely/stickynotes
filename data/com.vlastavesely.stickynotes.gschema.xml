@@ -12,6 +12,10 @@
       <default>''</default>
       <summary>The title of the note</summary>
     </key>
+    <key name="text" type="s">
+      <default>''</default>
+      <summary>The text of the note</summary>
+    </key>
     <key name="width" type="i">
       <default>100</default>
       <summary>Width of the note</summary>
