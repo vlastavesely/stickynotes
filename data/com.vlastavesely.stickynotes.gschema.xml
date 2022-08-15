@@ -12,5 +12,21 @@
       <default>''</default>
       <summary>The title of the note</summary>
     </key>
+    <key name="width" type="i">
+      <default>100</default>
+      <summary>Width of the note</summary>
+    </key>
+    <key name="height" type="i">
+      <default>100</default>
+      <summary>Height of the note</summary>
+    </key>
+    <key name="x" type="i">
+      <default>100</default>
+      <summary>Offset from the left</summary>
+    </key>
+    <key name="y" type="i">
+      <default>100</default>
+      <summary>Offset from the top</summary>
+    </key>
   </schema>
 </schemalist>
