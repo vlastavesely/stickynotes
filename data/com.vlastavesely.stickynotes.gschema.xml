@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<schemalist>
+  <schema id="com.vlastavesely.stickynotes" path="/com/vlastavesely/stickynotes/">
+    <key name="note-list" type="as">
+      <default>[]</default>
+      <summary>List of notes</summary>
+      <description>List of notes known to the program.</description>
+    </key>
+  </schema>
+</schemalist>
