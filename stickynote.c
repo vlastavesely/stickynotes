@@ -8,6 +8,7 @@
 struct StickyNote {
 	GtkWindow parent;
 	GSettings *settings;
+	GtkCssProvider *css_provider;
 	GtkWidget *title_label;
 	GtkWidget *lock_button;
 	GtkWidget *lock_image;
@@ -19,6 +20,7 @@ struct StickyNote {
 	GtkWidget *text_view;
 	int width, height, x, y;
 	bool locked;
+	char *colour, *font_colour, *font;
 };
 
 struct StickyNoteClass {
@@ -34,6 +36,9 @@ enum {
 	PROP_X,
 	PROP_Y,
 	PROP_LOCKED,
+	PROP_COLOUR,
+	PROP_FONT_COLOUR,
+	PROP_FONT,
 	N_PROPERTIES
 };
 
@@ -67,6 +72,7 @@ static GtkWidget *create_text_view()
 
 	view = gtk_source_view_new();
 	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(view), GTK_WRAP_WORD);
+	gtk_widget_set_name(view, "text_view");
 	gtk_widget_show_all(view);
 
 	return view;
@@ -184,6 +190,32 @@ static void update_ui(StickyNote *note)
 				    locked ? LOCKED_ICON : UNLOCKED_ICON);
 }
 
+static void update_css(StickyNote *note)
+{
+	char *colour, *font_colour, *font;
+	char css[512] = {};
+
+	g_object_get(G_OBJECT(note), "colour", &colour,
+		     "font-colour", &font_colour, "font", &font, NULL);
+
+	if (!colour || !font_colour || !font)
+		return;
+
+	snprintf(css, sizeof(css), "window {background: %s; color: %s; font: %s}",
+		 colour, font_colour, font);
+
+	free(colour);
+	free(font_colour);
+	free(font);
+
+	gtk_css_provider_load_from_data(note->css_provider, css, -1, NULL);
+}
+
+#define SET_STRING(ptr, str) {	\
+	free(ptr);		\
+	ptr = strdup(str);	\
+}
+
 static void set_property(GObject *object, unsigned int prop_id,
 			 const GValue *value, GParamSpec *pspec)
 {
@@ -223,6 +255,21 @@ static void set_property(GObject *object, unsigned int prop_id,
 	case PROP_Y:
 		note->y = g_value_get_int(value);
 		update_geometry(note);
+		break;
+
+	case PROP_COLOUR:
+		SET_STRING(note->colour, g_value_get_string(value));
+		update_css(note);
+		break;
+
+	case PROP_FONT_COLOUR:
+		SET_STRING(note->font_colour, g_value_get_string(value));
+		update_css(note);
+		break;
+
+	case PROP_FONT:
+		SET_STRING(note->font, g_value_get_string(value));
+		update_css(note);
 		break;
 
 	case PROP_LOCKED:
@@ -271,6 +318,18 @@ static void get_property(GObject *object, unsigned int prop_id, GValue *value,
 		g_value_set_int(value, note->y);
 		break;
 
+	case PROP_COLOUR:
+		g_value_set_string(value, note->colour);
+		break;
+
+	case PROP_FONT_COLOUR:
+		g_value_set_string(value, note->font_colour);
+		break;
+
+	case PROP_FONT:
+		g_value_set_string(value, note->font);
+		break;
+
 	case PROP_LOCKED:
 		g_value_set_boolean(value, note->locked);
 		break;
@@ -281,6 +340,19 @@ static void get_property(GObject *object, unsigned int prop_id, GValue *value,
 	}
 }
 
+static GtkCssProvider *make_css_provider(StickyNote *note)
+{
+	GtkStyleContext *context;
+	GtkCssProvider *provider;
+
+	context = gtk_widget_get_style_context(GTK_WIDGET(note));
+	provider = gtk_css_provider_new();
+	gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider),
+				       GTK_STYLE_PROVIDER_PRIORITY_USER);
+
+	return provider;
+}
+
 static void stickynote_init(StickyNote *note)
 {
 	GtkTextBuffer *buffer;
@@ -289,6 +361,8 @@ static void stickynote_init(StickyNote *note)
 
 	note->text_view = create_text_view();
 	gtk_container_add(GTK_CONTAINER(note->text_view_area), note->text_view);
+
+	note->css_provider = make_css_provider(note);
 
 	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(note->text_view));
 	g_signal_connect(G_OBJECT(buffer), "changed",
@@ -350,6 +424,15 @@ static void constructed(GObject *object)
 			G_SETTINGS_BIND_DEFAULT);
 
 	g_settings_bind(settings, "y", note, "y",
+			G_SETTINGS_BIND_DEFAULT);
+
+	g_settings_bind(settings, "colour", note, "colour",
+			G_SETTINGS_BIND_DEFAULT);
+
+	g_settings_bind(settings, "font-colour", note, "font-colour",
+			G_SETTINGS_BIND_DEFAULT);
+
+	g_settings_bind(settings, "font", note, "font",
 			G_SETTINGS_BIND_DEFAULT);
 
 	g_settings_bind(settings, "locked", note, "locked",
@@ -414,6 +497,18 @@ static void stickynote_class_init(StickyNoteClass *klass)
 
 	obj_properties[PROP_Y] = g_param_spec_int("y",
 			"Y", "Offset from the top", -5000, 5000, 100,
+			G_PARAM_READABLE | G_PARAM_WRITABLE);
+
+	obj_properties[PROP_COLOUR] = g_param_spec_string("colour",
+			"Colour", "The background colour of the note", "",
+			G_PARAM_READABLE | G_PARAM_WRITABLE);
+
+	obj_properties[PROP_FONT_COLOUR] = g_param_spec_string("font-colour",
+			"Font colour", "The font colour of the note", "",
+			G_PARAM_READABLE | G_PARAM_WRITABLE);
+
+	obj_properties[PROP_FONT] = g_param_spec_string("font",
+			"Font", "The font of the note", "",
 			G_PARAM_READABLE | G_PARAM_WRITABLE);
 
 	obj_properties[PROP_LOCKED] = g_param_spec_boolean("locked", "Locked",

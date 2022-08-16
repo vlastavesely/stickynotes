@@ -21,7 +21,7 @@ main: $(OBJECTS)
 %.o: %.c
 	$(CC) -MMD -MP -c $< -o $@ $(CFLAGS)
 
-resources.c: res/*.ui res/*.png res/resources.xml
+resources.c: res/*.ui res/*.png res/*.css res/resources.xml
 	$(RESGEN) res/resources.xml --sourcedir=res --target=$@ --generate-source
 
 data/gschemas.compiled: data/com.vlastavesely.stickynotes.gschema.xml

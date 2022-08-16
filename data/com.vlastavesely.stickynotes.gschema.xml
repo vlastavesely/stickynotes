@@ -32,6 +32,18 @@
       <default>100</default>
       <summary>Offset from the top</summary>
     </key>
+    <key name="colour" type="s">
+      <default>'#fff4a4'</default>
+      <summary>The background colour of the note</summary>
+    </key>
+    <key name="font-colour" type="s">
+      <default>'#000000'</default>
+      <summary>The font colour of the note</summary>
+    </key>
+    <key name="font" type="s">
+      <default>'11pt monospace'</default>
+      <summary>The font of the note</summary>
+    </key>
     <key name="locked" type="b">
       <default>false</default>
       <summary>Whether the note is locked</summary>

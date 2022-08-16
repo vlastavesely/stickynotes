@@ -65,6 +65,18 @@ static void load_notes(NotesApplication *application)
 	g_strfreev(names);
 }
 
+static void load_stylesheet()
+{
+	GtkCssProvider *provider;
+
+	provider = gtk_css_provider_new();
+	gtk_css_provider_load_from_resource(provider, RESOURCE_PATH "/stylesheet.css");
+
+	gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
+				GTK_STYLE_PROVIDER(provider),
+				GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+}
+
 static void notes_application_init(NotesApplication *application)
 {
 	GSettings *settings;
@@ -92,6 +104,7 @@ static void notes_application_activate(GApplication *application)
 	NotesApplication *app = NOTES_APPLICATION(application);
 
 	load_notes(app);
+	load_stylesheet();
 
 	app->indicator = stickynotes_indicator_new();
 	app->indicator->application = app;
