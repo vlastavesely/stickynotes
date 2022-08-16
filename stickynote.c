@@ -2,16 +2,23 @@
 #include "stickynote.h"
 #include <gtksourceview/gtksource.h>
 
+#define LOCKED_ICON RESOURCE_PATH "/locked.png"
+#define UNLOCKED_ICON RESOURCE_PATH "/unlocked.png"
+
 struct StickyNote {
 	GtkWindow parent;
 	GSettings *settings;
 	GtkWidget *title_label;
+	GtkWidget *lock_button;
+	GtkWidget *lock_image;
+	GtkWidget *close_button;
 	GtkWidget *move_box;
 	GtkWidget *resize_sw;
 	GtkWidget *resize_se;
 	GtkWidget *text_view_area;
 	GtkWidget *text_view;
 	int width, height, x, y;
+	bool locked;
 };
 
 struct StickyNoteClass {
@@ -26,6 +33,7 @@ enum {
 	PROP_HEIGHT,
 	PROP_X,
 	PROP_Y,
+	PROP_LOCKED,
 	N_PROPERTIES
 };
 
@@ -99,7 +107,6 @@ static bool stickynote_resize(GtkWidget *widget, GdkEventButton *event,
 	gtk_window_begin_resize_drag(GTK_WINDOW(note), edge, event->button,
 				     event->x_root, event->y_root,
 				     event->time);
-
 	return true;
 }
 
@@ -112,8 +119,24 @@ static bool stickynote_move(GtkWidget *widget, GdkEventButton *event,
 	gtk_window_begin_move_drag(GTK_WINDOW(note), event->button,
 				   event->x_root, event->y_root,
 				   event->time);
+	return true;
+}
+
+static bool close_request(GtkWidget *widget, GdkEvent *event, StickyNote *note)
+{
+	puts("CLOSING");
 
 	return true;
+}
+
+static void close_button_click(GtkWidget *button, StickyNote *note)
+{
+	gtk_window_close(GTK_WINDOW(note));
+}
+
+static void lock_button_click(GtkWidget *button, StickyNote *note)
+{
+	g_object_set(G_OBJECT(note), "locked", !note->locked, NULL);
 }
 
 static bool save_geometry(GtkWidget *widget, GdkEventConfigure *event, void *data)
@@ -150,6 +173,15 @@ static void update_geometry(StickyNote *note)
 
 	gtk_window_resize(window, note->width, note->height);
 	gtk_window_move(window, note->x, note->y);
+}
+
+static void update_ui(StickyNote *note)
+{
+	bool locked = note->locked;
+
+	gtk_text_view_set_editable(GTK_TEXT_VIEW(note->text_view), !locked);
+	gtk_image_set_from_resource(GTK_IMAGE(note->lock_image),
+				    locked ? LOCKED_ICON : UNLOCKED_ICON);
 }
 
 static void set_property(GObject *object, unsigned int prop_id,
@@ -193,6 +225,11 @@ static void set_property(GObject *object, unsigned int prop_id,
 		update_geometry(note);
 		break;
 
+	case PROP_LOCKED:
+		note->locked = g_value_get_boolean(value);
+		update_ui(note);
+		break;
+
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
@@ -234,6 +271,10 @@ static void get_property(GObject *object, unsigned int prop_id, GValue *value,
 		g_value_set_int(value, note->y);
 		break;
 
+	case PROP_LOCKED:
+		g_value_set_boolean(value, note->locked);
+		break;
+
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
@@ -252,6 +293,15 @@ static void stickynote_init(StickyNote *note)
 	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(note->text_view));
 	g_signal_connect(G_OBJECT(buffer), "changed",
 			 G_CALLBACK(text_changed), note);
+
+	g_signal_connect(G_OBJECT(note->lock_button), "clicked",
+			 G_CALLBACK(lock_button_click), note);
+
+	g_signal_connect(G_OBJECT(note->close_button), "clicked",
+			 G_CALLBACK(close_button_click), note);
+
+	g_signal_connect(G_OBJECT(note), "delete-event",
+			 G_CALLBACK(close_request), note);
 
 	g_signal_connect(G_OBJECT(note->resize_sw), "button-press-event",
 			 G_CALLBACK(stickynote_resize), note);
@@ -301,6 +351,9 @@ static void constructed(GObject *object)
 
 	g_settings_bind(settings, "y", note, "y",
 			G_SETTINGS_BIND_DEFAULT);
+
+	g_settings_bind(settings, "locked", note, "locked",
+			G_SETTINGS_BIND_DEFAULT);
 }
 
 static void stickynote_class_init(StickyNoteClass *klass)
@@ -313,6 +366,12 @@ static void stickynote_class_init(StickyNoteClass *klass)
 
 	gtk_widget_class_bind_template_child(widget_class,
 					     StickyNote, title_label);
+	gtk_widget_class_bind_template_child(widget_class,
+					     StickyNote, lock_button);
+	gtk_widget_class_bind_template_child(widget_class,
+					     StickyNote, lock_image);
+	gtk_widget_class_bind_template_child(widget_class,
+					     StickyNote, close_button);
 
 	gtk_widget_class_bind_template_child(widget_class,
 					     StickyNote, move_box);
@@ -356,6 +415,9 @@ static void stickynote_class_init(StickyNoteClass *klass)
 	obj_properties[PROP_Y] = g_param_spec_int("y",
 			"Y", "Offset from the top", -5000, 5000, 100,
 			G_PARAM_READABLE | G_PARAM_WRITABLE);
+
+	obj_properties[PROP_LOCKED] = g_param_spec_boolean("locked", "Locked",
+			"Whether the note is locked", 0, G_PARAM_READWRITE);
 
 	g_object_class_install_properties(object_class, N_PROPERTIES,
 					  obj_properties);

@@ -32,5 +32,9 @@
       <default>100</default>
       <summary>Offset from the top</summary>
     </key>
+    <key name="locked" type="b">
+      <default>false</default>
+      <summary>Whether the note is locked</summary>
+    </key>
   </schema>
 </schemalist>
