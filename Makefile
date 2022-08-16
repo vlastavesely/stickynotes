@@ -3,11 +3,11 @@ RM        = rm -f
 RESGEN    = glib-compile-resources
 SCHEMAGEN = glib-compile-schemas
 
-LIBNAMES = gtk+-3.0 gtksourceview-3.0
-CFLAGS   = $(shell pkg-config --cflags $(LIBNAMES)) -Wall -O2
+LIBNAMES = gtk+-3.0 gtksourceview-3.0 ayatana-appindicator3-0.1 x11
+CFLAGS   = $(shell pkg-config --cflags $(LIBNAMES)) -Wall -O2 -Wno-deprecated-declarations
 LFLAGS   = $(shell pkg-config --libs $(LIBNAMES))
 
-OBJECTS = main.o application.o stickynote.o resources.o
+OBJECTS = main.o application.o stickynote.o resources.o indicator.o
 
 
 all: main data/gschemas.compiled

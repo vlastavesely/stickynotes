@@ -31,6 +31,8 @@ NotesApplication *notes_application_new(void);
 StickyNote *notes_application_open_note(NotesApplication *application,
 					const char *name);
 
+GHashTable *notes_application_get_notes(NotesApplication *application);
+
 #if defined (__cplusplus)
 }
 #endif

@@ -1,9 +1,11 @@
 #include "compat.h"
 #include "application.h"
 #include "stickynote.h"
+#include "indicator.h"
 
 struct _NotesApplication {
 	GtkApplication parent;
+	StickynotesIndicator *indicator;
 	GSettings *settings;
 	GHashTable *notes;
 };
@@ -81,6 +83,7 @@ static void notes_application_finalise(GObject *object)
 	NotesApplication *application = NOTES_APPLICATION(object);
 
 	g_object_unref(application->settings);
+	stickynotes_indicator_free(application->indicator);
 	g_hash_table_unref(application->notes);
 }
 
@@ -89,6 +92,9 @@ static void notes_application_activate(GApplication *application)
 	NotesApplication *app = NOTES_APPLICATION(application);
 
 	load_notes(app);
+
+	app->indicator = stickynotes_indicator_new();
+	app->indicator->application = app;
 
 	g_application_hold(application);
 }
@@ -111,4 +117,9 @@ NotesApplication *notes_application_new(void)
 			    "application-id", APPLICATION_ID,
 			    "flags", G_APPLICATION_HANDLES_OPEN,
 			    NULL);
+}
+
+GHashTable *notes_application_get_notes(NotesApplication *application)
+{
+	return application->notes;
 }
