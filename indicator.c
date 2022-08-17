@@ -1,5 +1,6 @@
 #include "compat.h"
 #include "indicator.h"
+#include "application.h"
 #include "stickynote.h"
 #include <X11/Xatom.h>
 #include <gdk/gdkx.h>
@@ -68,7 +69,7 @@ static int button_press_event(GtkStatusIcon *icon, GdkEvent *event, void *data)
 	GHashTable *notes;
 
 	indicator = STICKYNOTES_INDICATOR(data);
-	notes = notes_application_get_notes(indicator->application);
+	notes = notes_application_get_notes(application);
 
 	switch (event->button.button) {
 	case 1:

@@ -14,6 +14,8 @@ struct _NotesApplicationClass {
 	GtkApplicationClass parent_class;
 };
 
+NotesApplication *application = NULL;
+
 G_DEFINE_TYPE(NotesApplication, notes_application, GTK_TYPE_APPLICATION);
 
 static void update_note_list(NotesApplication *app)
@@ -22,7 +24,7 @@ static void update_note_list(NotesApplication *app)
 
 	keys = (char **) g_hash_table_get_keys_as_array(app->notes, NULL);
 	g_settings_set_strv(app->settings, "note-list", (const char **) keys);
-	g_strfreev(keys);
+	free(keys);
 }
 
 static StickyNote *create_note(NotesApplication *application, const char *name)
@@ -50,6 +52,13 @@ StickyNote *notes_application_open_note(NotesApplication *application,
 	update_note_list(application);
 
 	return note;
+}
+
+void notes_application_close_note(NotesApplication *application,
+				  const char *name)
+{
+	g_hash_table_remove(application->notes, name);
+	update_note_list(application);
 }
 
 static void load_notes(NotesApplication *application)
@@ -107,7 +116,6 @@ static void notes_application_activate(GApplication *application)
 	load_stylesheet();
 
 	app->indicator = stickynotes_indicator_new();
-	app->indicator->application = app;
 
 	g_application_hold(application);
 }

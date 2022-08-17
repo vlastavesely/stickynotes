@@ -2,7 +2,6 @@
 #define __STICKYNOTES_INDICATOR_H
 
 #include <libayatana-appindicator/app-indicator.h>
-#include "application.h"
 
 typedef struct StickynotesIndicator       StickynotesIndicator;
 typedef struct StickynotesIndicatorClass  StickynotesIndicatorClass;
@@ -14,7 +13,6 @@ struct StickynotesIndicatorClass {
 struct StickynotesIndicator {
 	AppIndicator parent;
 	GtkStatusIcon *icon;
-	NotesApplication *application;
 	unsigned int minimised;
 };
 

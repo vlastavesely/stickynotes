@@ -1,5 +1,6 @@
 #include "compat.h"
 #include "stickynote.h"
+#include "application.h"
 #include <gtksourceview/gtksource.h>
 
 #define LOCKED_ICON RESOURCE_PATH "/locked.png"
@@ -8,6 +9,7 @@
 struct StickyNote {
 	GtkWindow parent;
 	GSettings *settings;
+	char *name;
 	GtkCssProvider *css_provider;
 	GtkWidget *title_label;
 	GtkWidget *lock_button;
@@ -128,11 +130,51 @@ static bool stickynote_move(GtkWidget *widget, GdkEventButton *event,
 	return true;
 }
 
+static bool can_close(StickyNote *note)
+{
+	GtkWidget *dialog;
+	bool ret;
+
+	dialog = gtk_message_dialog_new(GTK_WINDOW(note), GTK_DIALOG_MODAL,
+					GTK_MESSAGE_WARNING, GTK_BUTTONS_YES_NO,
+					"Delete this stickynote?\nThis cannot be undone.");
+	gtk_window_set_title(GTK_WINDOW(dialog), "Sticky Notes");
+
+	ret = gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES;
+	gtk_widget_destroy(dialog);
+
+	return ret;
+}
+
+static void reset_settings(StickyNote *note)
+{
+	GSettingsSchema *schema;
+	GSettings *settings;
+	unsigned int i;
+	char **keys;
+
+	settings = note->settings;
+	g_object_get(G_OBJECT(settings), "settings-schema", &schema, NULL);
+
+	keys = g_settings_schema_list_keys(schema);
+	for (i = 0; keys[i]; i++) {
+		g_settings_unbind(note, keys[i]);
+		g_settings_reset(settings, keys[i]);
+	}
+
+	g_strfreev(keys);
+}
+
 static bool close_request(GtkWidget *widget, GdkEvent *event, StickyNote *note)
 {
-	puts("CLOSING");
+	if (!can_close(note)) {
+		return true;
+	}
 
-	return true;
+	reset_settings(note);
+	notes_application_close_note(application, note->name);
+
+	return false;
 }
 
 static void close_button_click(GtkWidget *button, StickyNote *note)
@@ -224,6 +266,7 @@ static void set_property(GObject *object, unsigned int prop_id,
 
 	switch (prop_id) {
 	case PROP_NAME:
+		SET_STRING(note->name, g_value_get_string(value));
 		load_settings_for_name(note, g_value_get_string(value));
 		break;
 
@@ -398,6 +441,11 @@ static void finalise(GObject *object)
 {
 	StickyNote *note = STICKYNOTE(object);
 
+	free(note->name);
+	free(note->colour);
+	free(note->font_colour);
+	free(note->font);
+
 	g_object_unref(note->settings);
 
 	G_OBJECT_CLASS(stickynote_parent_class)->finalize(object);
@@ -525,5 +573,5 @@ StickyNote *stickynote_new(const char *name)
 
 void stickynote_free(StickyNote *note)
 {
-	g_object_unref(note);
+	gtk_widget_destroy(GTK_WIDGET(note));
 }

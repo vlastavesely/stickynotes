@@ -25,11 +25,15 @@ extern "C" {
 typedef struct _NotesApplication      NotesApplication;
 typedef struct _NotesApplicationClass NotesApplicationClass;
 
+extern NotesApplication *application;
+
 GType notes_application_get_type(void);
 NotesApplication *notes_application_new(void);
 
 StickyNote *notes_application_open_note(NotesApplication *application,
 					const char *name);
+void notes_application_close_note(NotesApplication *application,
+				  const char *name);
 
 GHashTable *notes_application_get_notes(NotesApplication *application);
 
