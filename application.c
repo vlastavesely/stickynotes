@@ -20,10 +20,10 @@ G_DEFINE_TYPE(NotesApplication, notes_application, GTK_TYPE_APPLICATION);
 
 static void update_note_list(NotesApplication *app)
 {
-	char **keys;
+	const char **keys;
 
-	keys = (char **) g_hash_table_get_keys_as_array(app->notes, NULL);
-	g_settings_set_strv(app->settings, "note-list", (const char **) keys);
+	keys = (const char **) g_hash_table_get_keys_as_array(app->notes, NULL);
+	g_settings_set_strv(app->settings, "note-list", keys);
 	free(keys);
 }
 
@@ -52,6 +52,21 @@ StickyNote *notes_application_open_note(NotesApplication *application,
 	update_note_list(application);
 
 	return note;
+}
+
+StickyNote *notes_application_create_note(NotesApplication *application)
+{
+	unsigned int i;
+	char name[32];
+
+	for (i = 1; i; i++) {
+		snprintf(name, sizeof(name), "note-%d", i);
+		if (g_hash_table_lookup(application->notes, name) == NULL) {
+			break;
+		}
+	}
+
+	return notes_application_open_note(application, name);
 }
 
 void notes_application_close_note(NotesApplication *application,
