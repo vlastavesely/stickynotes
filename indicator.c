@@ -5,6 +5,18 @@
 #include <X11/Xatom.h>
 #include <gdk/gdkx.h>
 
+static const char *menu_str =
+	"<interface>"
+	"  <menu id=\"menu\">"
+	"    <section>"
+	"      <item>"
+	"        <attribute name=\"label\">New note</attribute>"
+	"        <attribute name=\"action\">app.new</attribute>"
+	"      </item>"
+	"    </section>"
+	"  </menu>"
+	"</interface>";
+
 G_DEFINE_TYPE(StickynotesIndicator, stickynotes_indicator, APP_INDICATOR_TYPE);
 
 static void set_cardinal_point_geometry(GdkWindow *window, GdkRectangle *area)
@@ -63,6 +75,30 @@ static void switch_notes_visibility(GHashTable *notes,
 	g_list_free(values);
 }
 
+static GtkMenu *create_popup_menu(StickynotesIndicator *indicator)
+{
+	GtkBuilder *builder;
+	GMenuModel *model;
+	GtkMenu *menu;
+
+	builder = gtk_builder_new_from_string(menu_str, -1);
+	model = G_MENU_MODEL(gtk_builder_get_object(builder, "menu"));
+	menu = GTK_MENU(gtk_menu_new_from_model(model));
+	g_object_unref(builder);
+
+	gtk_widget_insert_action_group(GTK_WIDGET(menu), "app",
+				       G_ACTION_GROUP(application));
+
+	gtk_widget_show_all(GTK_WIDGET(menu));
+
+	return menu;
+}
+
+static void show_popup_menu(StickynotesIndicator *indicator)
+{
+	gtk_menu_popup_at_pointer(indicator->popup, NULL);
+}
+
 static int button_press_event(GtkStatusIcon *icon, GdkEvent *event, void *data)
 {
 	StickynotesIndicator *indicator;
@@ -74,6 +110,10 @@ static int button_press_event(GtkStatusIcon *icon, GdkEvent *event, void *data)
 	switch (event->button.button) {
 	case 1:
 		switch_notes_visibility(notes, indicator);
+		break;
+
+	case 3:
+		show_popup_menu(indicator);
 		break;
 
 	default:
@@ -115,6 +155,7 @@ static void stickynotes_indicator_class_init(StickynotesIndicatorClass *klass)
 
 static void stickynotes_indicator_init(StickynotesIndicator *indicator)
 {
+	indicator->popup = create_popup_menu(indicator);
 }
 
 StickynotesIndicator *stickynotes_indicator_new()

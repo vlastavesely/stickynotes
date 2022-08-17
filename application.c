@@ -18,6 +18,16 @@ NotesApplication *application = NULL;
 
 G_DEFINE_TYPE(NotesApplication, notes_application, GTK_TYPE_APPLICATION);
 
+
+static void action_new(GSimpleAction *action, GVariant *param, void *userdata)
+{
+	notes_application_create_note(application);
+}
+
+static GActionEntry actions[] = {
+	{"new", action_new}
+};
+
 static void update_note_list(NotesApplication *app)
 {
 	const char **keys;
@@ -54,19 +64,35 @@ StickyNote *notes_application_open_note(NotesApplication *application,
 	return note;
 }
 
+static void generate_initial_title(char *ptr)
+{
+	time_t t;
+	struct tm *local;
+
+	time(&t);
+	local = localtime(&t);
+
+	strftime(ptr, 32, "%Y-%m-%d", local);
+}
+
 StickyNote *notes_application_create_note(NotesApplication *application)
 {
+	StickyNote *note;
 	unsigned int i;
-	char name[32];
+	char buf[32];
 
 	for (i = 1; i; i++) {
-		snprintf(name, sizeof(name), "note-%d", i);
-		if (g_hash_table_lookup(application->notes, name) == NULL) {
+		snprintf(buf, sizeof(buf), "note-%d", i);
+		if (g_hash_table_lookup(application->notes, buf) == NULL) {
 			break;
 		}
 	}
 
-	return notes_application_open_note(application, name);
+	note = notes_application_open_note(application, buf);
+	generate_initial_title(buf);
+	g_object_set(G_OBJECT(note), "title", buf, NULL);
+
+	return note;
 }
 
 void notes_application_close_note(NotesApplication *application,
@@ -131,6 +157,9 @@ static void notes_application_activate(GApplication *application)
 	load_stylesheet();
 
 	app->indicator = stickynotes_indicator_new();
+
+	g_action_map_add_action_entries(G_ACTION_MAP(application),
+		actions, G_N_ELEMENTS(actions), NULL);
 
 	g_application_hold(application);
 }

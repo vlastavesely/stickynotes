@@ -13,6 +13,7 @@ struct StickynotesIndicatorClass {
 struct StickynotesIndicator {
 	AppIndicator parent;
 	GtkStatusIcon *icon;
+	GtkMenu *popup;
 	unsigned int minimised;
 };
 
