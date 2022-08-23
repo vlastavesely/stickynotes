@@ -3,6 +3,7 @@
 <interface>
   <requires lib="gtk+" version="3.24"/>
   <template class="StickyNotePropertiesDialog" parent="GtkDialog">
+    <property name="width-request">330</property>
     <property name="can-focus">False</property>
     <property name="title" translatable="yes">Sticky Note Properties</property>
     <property name="type-hint">dialog</property>
@@ -19,7 +20,7 @@
               <placeholder/>
             </child>
             <child>
-              <object class="GtkButton">
+              <object class="GtkButton" id="close_button">
                 <property name="label" translatable="yes">Close</property>
                 <property name="width-request">90</property>
                 <property name="visible">True</property>
@@ -83,7 +84,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkEntry" id="title">
+                  <object class="GtkEntry" id="title_entry">
                     <property name="width-request">180</property>
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
@@ -150,7 +151,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkColorButton" id="colour">
+                          <object class="GtkColorButton" id="colour_button">
                             <property name="width-request">180</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
@@ -187,7 +188,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkColorButton" id="font_colour">
+                          <object class="GtkColorButton" id="font_colour_button">
                             <property name="width-request">180</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
@@ -263,7 +264,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkFontButton" id="font">
+                      <object class="GtkFontButton" id="font_button">
                         <property name="width-request">180</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>

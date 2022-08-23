@@ -283,12 +283,11 @@ static void action_properties(GSimpleAction *action, GVariant *param,
 {
 	StickyNotePropertiesDialog *dialog;
 
-	dialog = sticky_note_properties_dialog_new();
+	dialog = sticky_note_properties_dialog_new(note);
 	gtk_window_set_transient_for(GTK_WINDOW(dialog), GTK_WINDOW(note));
 
-	gtk_dialog_run(dialog);
-
-	gtk_widget_destroy(dialog);
+	gtk_dialog_run(GTK_DIALOG(dialog));
+	gtk_widget_destroy(GTK_WIDGET(dialog));
 }
 
 static GActionEntry actions[] = {
