@@ -41,8 +41,8 @@
       <summary>The font colour of the note</summary>
     </key>
     <key name="font" type="s">
-      <default>'11pt monospace'</default>
-      <summary>The font of the note</summary>
+      <default>'monospace 12'</default>
+      <summary>The note's font</summary>
     </key>
     <key name="locked" type="b">
       <default>false</default>

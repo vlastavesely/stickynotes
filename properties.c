@@ -51,8 +51,8 @@ static void title_changed(GtkEntry *entry, StickyNotePropertiesDialog *dialog)
 	g_object_set(G_OBJECT(dialog->note), "title", text);
 }
 
-static void colour_changed(GtkColorChooser *chooser,
-			   StickyNotePropertiesDialog *dialog)
+static void colour_set(GtkColorChooser *chooser,
+		       StickyNotePropertiesDialog *dialog)
 {
 	char *hex;
 
@@ -61,8 +61,8 @@ static void colour_changed(GtkColorChooser *chooser,
 	free(hex);
 }
 
-static void font_colour_changed(GtkColorChooser *chooser,
-			   StickyNotePropertiesDialog *dialog)
+static void font_colour_set(GtkColorChooser *chooser,
+			    StickyNotePropertiesDialog *dialog)
 {
 	char *hex;
 
@@ -71,9 +71,37 @@ static void font_colour_changed(GtkColorChooser *chooser,
 	free(hex);
 }
 
+static void font_set(GtkFontChooser *chooser, StickyNotePropertiesDialog *dialog)
+{
+	PangoFontDescription *desc;
+	char *font;
+
+	desc = gtk_font_chooser_get_font_desc(chooser);
+	font = pango_font_description_to_string(desc);
+
+	g_object_set(G_OBJECT(dialog->note), "font", font, NULL);
+
+	pango_font_description_free(desc);
+	free(font);
+}
+
 static void close_dialog(GtkButton *button, GtkDialog *dialog)
 {
 	gtk_dialog_response(dialog, GTK_RESPONSE_CLOSE);
+}
+
+static void chooser_set_font(GtkFontChooser *chooser, StickyNote *note)
+{
+	PangoFontDescription *desc;
+	char *font;
+
+	g_object_get(G_OBJECT(note), "font", &font, NULL);
+
+	desc = pango_font_description_from_string(font);
+	gtk_font_chooser_set_font_desc(chooser, desc);
+
+	pango_font_description_free(desc);
+	free(font);
 }
 
 static void init_ui(StickyNotePropertiesDialog *dialog)
@@ -93,9 +121,7 @@ static void init_ui(StickyNotePropertiesDialog *dialog)
 	set_colour(GTK_COLOR_CHOOSER(dialog->font_colour_button), str);
 	free(str);
 
-	g_object_get(G_OBJECT(note), "font", &str, NULL);
-	gtk_font_chooser_set_font(GTK_FONT_CHOOSER(dialog->font_button), str);
-	free(str);
+	chooser_set_font(GTK_FONT_CHOOSER(dialog->font_button), note);
 }
 
 static void set_property(GObject *object, unsigned int prop_id,
@@ -126,10 +152,13 @@ static void sticky_note_properties_dialog_init(StickyNotePropertiesDialog *dialo
 			 G_CALLBACK(title_changed), dialog);
 
 	g_signal_connect(G_OBJECT(dialog->colour_button), "color-set",
-			 G_CALLBACK(colour_changed), dialog);
+			 G_CALLBACK(colour_set), dialog);
 
 	g_signal_connect(G_OBJECT(dialog->font_colour_button), "color-set",
-			 G_CALLBACK(font_colour_changed), dialog);
+			 G_CALLBACK(font_colour_set), dialog);
+
+	g_signal_connect(G_OBJECT(dialog->font_button), "font-set",
+			 G_CALLBACK(font_set), dialog);
 
 	g_signal_connect(G_OBJECT(dialog->close_button), "clicked",
 			 G_CALLBACK(close_dialog), dialog);

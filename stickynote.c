@@ -257,8 +257,17 @@ static void update_ui(StickyNote *note)
 				    locked ? LOCKED_ICON : UNLOCKED_ICON);
 }
 
+static const char *get_font_style(unsigned int style)
+{
+	if (style & PANGO_STYLE_ITALIC)
+		return "italic";
+
+	return "normal";
+}
+
 static void update_css(StickyNote *note)
 {
+	PangoFontDescription *desc;
 	char *colour, *font_colour, *font;
 	char css[512] = {};
 
@@ -268,8 +277,24 @@ static void update_css(StickyNote *note)
 	if (!colour || !font_colour || !font)
 		return;
 
-	snprintf(css, sizeof(css), "window {background: %s; color: %s; font: %s}",
-		 colour, font_colour, font);
+	desc = pango_font_description_from_string(font);
+
+	snprintf(css, sizeof(css),
+		 "window {"
+		 "  background: %s;"
+		 "  color: %s;"
+		 "  font-size: %dpt;"
+		 "  font-family: %s;"
+		 "  font-style: %s;"
+		 "  font-weight: %d;"
+		 "}",
+		 colour, font_colour,
+		 PANGO_PIXELS(pango_font_description_get_size(desc)),
+		 pango_font_description_get_family(desc),
+		 get_font_style(pango_font_description_get_style(desc)),
+		 pango_font_description_get_weight(desc));
+
+	pango_font_description_free(desc);
 
 	free(colour);
 	free(font_colour);
@@ -519,7 +544,6 @@ static void finalise(GObject *object)
 
 	free(note->name);
 	free(note->colour);
-	free(note->font_colour);
 	free(note->font);
 
 	g_object_unref(note->settings);
