@@ -2,6 +2,7 @@
 <gresources>
   <gresource prefix="/com/vlastavesely/stickynotes/">
     <file compressed="false">stickynote.ui</file>
+    <file compressed="false">properties.ui</file>
     <file compressed="false">stylesheet.css</file>
     <file preprocess="to-pixdata" compressed="true">locked.png</file>
     <file preprocess="to-pixdata" compressed="true">unlocked.png</file>

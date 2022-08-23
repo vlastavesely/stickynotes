@@ -1,14 +1,29 @@
 #include "compat.h"
 #include "stickynote.h"
 #include "application.h"
+#include "properties.h"
+
 #include <gtksourceview/gtksource.h>
 
 #define LOCKED_ICON RESOURCE_PATH "/locked.png"
 #define UNLOCKED_ICON RESOURCE_PATH "/unlocked.png"
 
+static const char *menu_str =
+	"<interface>"
+	"  <menu id=\"menu\">"
+	"    <section>"
+	"      <item>"
+	"        <attribute name=\"label\">Properties</attribute>"
+	"        <attribute name=\"action\">note.properties</attribute>"
+	"      </item>"
+	"    </section>"
+	"  </menu>"
+	"</interface>";
+
 struct StickyNote {
 	GtkWindow parent;
 	GSettings *settings;
+	GtkMenu *popup;
 	char *name;
 	GtkCssProvider *css_provider;
 	GtkWidget *title_label;
@@ -128,6 +143,16 @@ static bool stickynote_move(GtkWidget *widget, GdkEventButton *event,
 				   event->x_root, event->y_root,
 				   event->time);
 	return true;
+}
+
+static bool stickynote_popup(GtkWidget *widget, GdkEvent *event,
+			     StickyNote *note)
+{
+	if (event->button.button == 3) {
+		gtk_menu_popup_at_pointer(note->popup, (const GdkEvent *) event);
+	}
+
+	return false;
 }
 
 static bool can_close(StickyNote *note)
@@ -251,6 +276,53 @@ static void update_css(StickyNote *note)
 	free(font);
 
 	gtk_css_provider_load_from_data(note->css_provider, css, -1, NULL);
+}
+
+static void action_properties(GSimpleAction *action, GVariant *param,
+			      void *note)
+{
+	StickyNotePropertiesDialog *dialog;
+
+	dialog = sticky_note_properties_dialog_new();
+	gtk_window_set_transient_for(GTK_WINDOW(dialog), GTK_WINDOW(note));
+
+	gtk_dialog_run(dialog);
+
+	gtk_widget_destroy(dialog);
+}
+
+static GActionEntry actions[] = {
+	{"properties", action_properties},
+};
+
+static void register_actions(GtkMenu *menu, StickyNote *note)
+{
+	GSimpleActionGroup *group;
+
+	group = g_simple_action_group_new();
+	g_action_map_add_action_entries(G_ACTION_MAP(group), actions,
+					G_N_ELEMENTS(actions), note);
+
+	gtk_widget_insert_action_group(GTK_WIDGET(menu), "note",
+				       G_ACTION_GROUP(group));
+}
+
+static GtkMenu *create_popup_menu(StickyNote *note)
+{
+	GtkBuilder *builder;
+	GMenuModel *model;
+	GtkMenu *menu;
+
+	builder = gtk_builder_new_from_string(menu_str, -1);
+	model = G_MENU_MODEL(gtk_builder_get_object(builder, "menu"));
+	menu = GTK_MENU(gtk_menu_new_from_model(model));
+	g_object_unref(builder);
+
+	register_actions(menu, note);
+
+	gtk_widget_show_all(GTK_WIDGET(menu));
+
+	return menu;
 }
 
 #define SET_STRING(ptr, str) {	\
@@ -402,6 +474,8 @@ static void stickynote_init(StickyNote *note)
 
 	gtk_widget_init_template(GTK_WIDGET(note));
 
+	note->popup = create_popup_menu(note);
+
 	note->text_view = create_text_view();
 	gtk_container_add(GTK_CONTAINER(note->text_view_area), note->text_view);
 
@@ -428,6 +502,9 @@ static void stickynote_init(StickyNote *note)
 
 	g_signal_connect(G_OBJECT(note->move_box), "button-press-event",
 			 G_CALLBACK(stickynote_move), note);
+
+	g_signal_connect(G_OBJECT(note->move_box), "button-press-event",
+			 G_CALLBACK(stickynote_popup), note);
 
 	g_signal_connect(G_OBJECT(note), "configure-event",
 			 G_CALLBACK(save_geometry), NULL);

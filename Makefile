@@ -7,7 +7,7 @@ LIBNAMES = gtk+-3.0 gtksourceview-3.0 ayatana-appindicator3-0.1 x11
 CFLAGS   = $(shell pkg-config --cflags $(LIBNAMES)) -Wall -O2 -Wno-deprecated-declarations
 LFLAGS   = $(shell pkg-config --libs $(LIBNAMES))
 
-OBJECTS = main.o application.o stickynote.o resources.o indicator.o
+OBJECTS = main.o application.o stickynote.o resources.o indicator.o properties.o
 
 
 all: main data/gschemas.compiled

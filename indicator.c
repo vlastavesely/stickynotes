@@ -75,7 +75,7 @@ static void switch_notes_visibility(GHashTable *notes,
 	g_list_free(values);
 }
 
-static GtkMenu *create_popup_menu(StickynotesIndicator *indicator)
+static GtkMenu *create_popup_menu()
 {
 	GtkBuilder *builder;
 	GMenuModel *model;
@@ -129,7 +129,7 @@ static GtkStatusIcon *fallback(AppIndicator *app_inidcator)
 	GtkStatusIcon *icon;
 
 	indicator = STICKYNOTES_INDICATOR(app_inidcator);
-	icon = gtk_status_icon_new_from_icon_name("mate-panel-fish"); /* FIXME */
+	icon = gtk_status_icon_new_from_icon_name(APPLICATION_ICON);
 
 	g_signal_connect(G_OBJECT(icon), "button-press-event",
 			 G_CALLBACK(button_press_event), indicator);
@@ -155,7 +155,7 @@ static void stickynotes_indicator_class_init(StickynotesIndicatorClass *klass)
 
 static void stickynotes_indicator_init(StickynotesIndicator *indicator)
 {
-	indicator->popup = create_popup_menu(indicator);
+	indicator->popup = create_popup_menu();
 }
 
 StickynotesIndicator *stickynotes_indicator_new()
