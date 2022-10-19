@@ -89,6 +89,7 @@ static GtkWidget *create_text_view()
 
 	view = gtk_source_view_new();
 	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(view), GTK_WRAP_WORD);
+	gtk_source_view_set_auto_indent(GTK_SOURCE_VIEW(view), TRUE);
 	gtk_widget_set_name(view, "text_view");
 	gtk_widget_show_all(view);
 
