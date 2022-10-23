@@ -23,6 +23,7 @@ static const char *menu_str =
 struct StickyNote {
 	GtkWindow parent;
 	GSettings *settings;
+	bool constructed;
 	GtkMenu *popup;
 	char *name;
 	GtkCssProvider *css_provider;
@@ -243,16 +244,24 @@ static bool save_geometry(GtkWidget *widget, GdkEventConfigure *event, void *dat
 
 static void update_geometry(StickyNote *note)
 {
-	GtkWindow *window = GTK_WINDOW(note);
+	GtkWindow *window;
 
+	if (note->constructed == false)
+		return;
+
+	window = GTK_WINDOW(note);
 	gtk_window_resize(window, note->width, note->height);
 	gtk_window_move(window, note->x, note->y);
 }
 
 static void update_ui(StickyNote *note)
 {
-	bool locked = note->locked;
+	bool locked;
 
+	if (note->constructed == false)
+		return;
+
+	locked = note->locked;
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(note->text_view), !locked);
 	gtk_image_set_from_resource(GTK_IMAGE(note->lock_image),
 				    locked ? LOCKED_ICON : UNLOCKED_ICON);
@@ -533,10 +542,6 @@ static void stickynote_init(StickyNote *note)
 
 	g_signal_connect(G_OBJECT(note), "configure-event",
 			 G_CALLBACK(save_geometry), NULL);
-
-	/* Minimal default */
-	note->width = 100;
-	note->height = 100;
 }
 
 static void finalise(GObject *object)
@@ -586,6 +591,10 @@ static void constructed(GObject *object)
 
 	g_settings_bind(settings, "locked", note, "locked",
 			G_SETTINGS_BIND_DEFAULT);
+
+	note->constructed = true;
+	update_geometry(note);
+	update_ui(note);
 }
 
 static void stickynote_class_init(StickyNoteClass *klass)

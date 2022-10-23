@@ -48,7 +48,7 @@ static void title_changed(GtkEntry *entry, StickyNotePropertiesDialog *dialog)
 	const char *text;
 
 	text = gtk_entry_get_text(entry);
-	g_object_set(G_OBJECT(dialog->note), "title", text);
+	g_object_set(G_OBJECT(dialog->note), "title", text, NULL);
 }
 
 static void colour_set(GtkColorChooser *chooser,
@@ -201,9 +201,4 @@ StickyNotePropertiesDialog *sticky_note_properties_dialog_new(StickyNote *note)
 {
 	return g_object_new(STICKY_NOTE_PROPERTIES_DIALOG_TYPE, "note",
 			    note, NULL);
-}
-
-void properties_dialog_free(StickyNotePropertiesDialog *dialog)
-{
-	gtk_widget_destroy(GTK_WIDGET(dialog));
 }
