@@ -10,12 +10,12 @@ LFLAGS   = $(shell pkg-config --libs $(LIBNAMES))
 OBJECTS = main.o application.o stickynote.o resources.o indicator.o properties.o
 
 
-all: main data/gschemas.compiled
-	GSETTINGS_SCHEMA_DIR=data ./main
+all: stickynotes data/gschemas.compiled
+	GSETTINGS_SCHEMA_DIR=data ./stickynotes
 
 include $(wildcard *.d)
 
-main: $(OBJECTS)
+stickynotes: $(OBJECTS)
 	$(CC) $^ -o $@ $(LFLAGS)
 
 %.o: %.c
@@ -27,6 +27,12 @@ resources.c: res/*.ui res/*.png res/*.css res/resources.xml
 data/gschemas.compiled: data/com.vlastavesely.stickynotes.gschema.xml
 	$(SCHEMAGEN) data
 
+install:
+	install -m 0755 stickynotes /usr/bin
+
+uninstall:
+	$(RM) /usr/bin/stickynotes
+
 clean:
-	$(RM) main *.o *.d resources.c
+	$(RM) stickynotes *.o *.d resources.c
 	$(RM) data/*.compiled
