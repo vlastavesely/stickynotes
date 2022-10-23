@@ -1,0 +1,5 @@
+Features:
+  - independent on MATE Desktop
+  - does not resize the notes when the text is too long (forces scrolling instead)
+  - highlights selected text properly
+  - has ability to perform some basic synchronisation (using GSettings)
