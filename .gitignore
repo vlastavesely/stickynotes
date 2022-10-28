@@ -1,6 +1,7 @@
 /stickynotes
 /resources.c
 /data/*.compiled
+/data/*.desktop
 *~
 *.o
 *.d
