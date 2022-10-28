@@ -407,17 +407,29 @@ static void set_property(GObject *object, unsigned int prop_id,
 		break;
 
 	case PROP_COLOUR:
-		SET_STRING(note->colour, g_value_get_string(value));
+		if (g_value_get_string(value)) {
+			SET_STRING(note->colour, g_value_get_string(value));
+		} else {
+			g_settings_reset(note->settings, "colour");
+		}
 		update_css(note);
 		break;
 
 	case PROP_FONT_COLOUR:
-		SET_STRING(note->font_colour, g_value_get_string(value));
+		if (g_value_get_string(value)) {
+			SET_STRING(note->font_colour, g_value_get_string(value));
+		} else {
+			g_settings_reset(note->settings, "font-colour");
+		}
 		update_css(note);
 		break;
 
 	case PROP_FONT:
-		SET_STRING(note->font, g_value_get_string(value));
+		if (g_value_get_string(value)) {
+			SET_STRING(note->font, g_value_get_string(value));
+		} else {
+			g_settings_reset(note->settings, "font");
+		}
 		update_css(note);
 		break;
 
@@ -487,6 +499,43 @@ static void get_property(GObject *object, unsigned int prop_id, GValue *value,
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
 	}
+}
+
+bool stickynote_has_default_colours(StickyNote *note)
+{
+	GVariant *value;
+	const char *str;
+	int ret = 0;
+
+	value = g_settings_get_default_value(note->settings, "colour");
+
+	str = g_variant_get_string(value, NULL);
+	if (strcmp(str, note->colour) == 0)
+		ret++;
+
+	g_variant_unref(value);
+
+	value = g_settings_get_default_value(note->settings, "font-colour");
+
+	str = g_variant_get_string(value, NULL);
+	if (strcmp(str, note->font_colour) == 0)
+		ret++;
+
+	g_variant_unref(value);
+
+	return ret == 2; /* both colours are default */
+}
+
+bool stickynote_has_default_font(StickyNote *note)
+{
+	GVariant *value;
+	int ret;
+
+	value = g_settings_get_default_value(note->settings, "font");
+	ret = strcmp(g_variant_get_string(value, NULL), note->font) == 0;
+	g_variant_unref(value);
+
+	return ret;
 }
 
 static GtkCssProvider *make_css_provider(StickyNote *note)
