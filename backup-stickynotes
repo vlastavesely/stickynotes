@@ -1,0 +1,82 @@
+#!/usr/bin/python3
+# vim:set ts=4
+
+import getopt
+import os
+import sys
+
+from gi.repository import Gio
+from lxml import etree
+
+BASE_SCHEME = 'com.vlastavesely.stickynotes'
+
+
+def dump():
+	settings = Gio.Settings.new(BASE_SCHEME)
+	notes = settings.get_value('note-list')
+
+	xml = etree.Element('notes')
+
+	for note in notes:
+		name = note
+		path = f'/com/vlastavesely/stickynotes/{name}/'
+		note = Gio.Settings(schema=BASE_SCHEME + '.note', path=path)
+
+		elem = etree.SubElement(xml, 'note')
+		elem.set('name', name)
+		elem.set('title', str(note.get_string('title')))
+		elem.set('width', str(note.get_int('width')))
+		elem.set('height', str(note.get_int('height')))
+		elem.set('x', str(note.get_int('x')))
+		elem.set('y', str(note.get_int('y')))
+
+		elem.set('colour', str(note.get_string('colour')))
+		elem.set('font-colour', str(note.get_string('font-colour')))
+		elem.set('font', str(note.get_string('font')))
+
+		elem.text = str(note.get_string('text'))
+
+	print('<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>')
+	print(etree.tostring(xml, pretty_print=True).decode().strip())
+
+
+def restore(filename):
+	xml = etree.parse(filename)
+	root = xml.getroot()
+	names = []
+
+	for elem in root:
+		name = str(elem.get('name'))
+		path = f'/com/vlastavesely/stickynotes/{name}/'
+		note = Gio.Settings(schema=BASE_SCHEME + '.note', path=path)
+
+		note.set_string('title', elem.get('title'))
+		note.set_int('width', int(elem.get('width')))
+		note.set_int('height', int(elem.get('height')))
+		note.set_int('x', int(elem.get('x')))
+		note.set_int('y', int(elem.get('y')))
+
+		note.set_string('colour', elem.get('colour'))
+		note.set_string('font-colour', elem.get('font-colour'))
+		note.set_string('font', elem.get('font'))
+
+		note.set_string('text', elem.text)
+		note.sync()
+
+		names.append(name)
+
+	settings = Gio.Settings.new(BASE_SCHEME)
+	settings.set_strv('note-list', names)
+	settings.sync()
+
+
+if len(sys.argv) > 2 and sys.argv[1] == '-r':
+	filename = sys.argv[2]
+	if not os.path.exists(filename):
+		print('File ' + filename + ' does not exist.')
+		exit(1)
+
+	restore(filename)
+
+elif len(sys.argv) == 1:
+	dump()
