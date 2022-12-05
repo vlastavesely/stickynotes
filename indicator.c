@@ -5,6 +5,18 @@
 #include <X11/Xatom.h>
 #include <gdk/gdkx.h>
 
+struct StickyNotesIndicatorClass {
+	AppIndicatorClass parent;
+};
+
+struct StickyNotesIndicator {
+	AppIndicator parent;
+	NotesApplication *app;
+	GtkStatusIcon *icon;
+	GtkMenu *popup;
+	int minimised;
+};
+
 static const char *menu_str =
 	"<interface>"
 	"  <menu id=\"menu\">"
@@ -17,7 +29,7 @@ static const char *menu_str =
 	"  </menu>"
 	"</interface>";
 
-G_DEFINE_TYPE(StickynotesIndicator, stickynotes_indicator, APP_INDICATOR_TYPE);
+G_DEFINE_TYPE(StickyNotesIndicator, sticky_notes_indicator, APP_INDICATOR_TYPE);
 
 static void set_cardinal_point_geometry(GdkWindow *window, GdkRectangle *area)
 {
@@ -51,11 +63,14 @@ static void set_icon_geometry(GtkStatusIcon *icon, GtkWindow *window)
 	set_cardinal_point_geometry(gdk_win, &area);
 }
 
-static void switch_notes_visibility(GHashTable *notes,
-				    StickynotesIndicator *indicator)
+static void switch_notes_visibility(NotesApplication *app,
+				    StickyNotesIndicator *indicator)
 {
+	GHashTable *notes;
 	GList *values, *value;
 	GtkWindow *window;
+
+	notes = notes_application_get_notes(app);
 
 	values = g_hash_table_get_values(notes);
 	for (value = values; value; value = value->next) {
@@ -75,7 +90,7 @@ static void switch_notes_visibility(GHashTable *notes,
 	g_list_free(values);
 }
 
-static GtkMenu *create_popup_menu()
+static GtkMenu *create_popup_menu(StickyNotesIndicator *indicator)
 {
 	GtkBuilder *builder;
 	GMenuModel *model;
@@ -87,29 +102,27 @@ static GtkMenu *create_popup_menu()
 	g_object_unref(builder);
 
 	gtk_widget_insert_action_group(GTK_WIDGET(menu), "app",
-				       G_ACTION_GROUP(application));
+				       G_ACTION_GROUP(indicator->app));
 
 	gtk_widget_show_all(GTK_WIDGET(menu));
 
 	return menu;
 }
 
-static void show_popup_menu(StickynotesIndicator *indicator)
+static void show_popup_menu(StickyNotesIndicator *indicator)
 {
 	gtk_menu_popup_at_pointer(indicator->popup, NULL);
 }
 
-static int button_press_event(GtkStatusIcon *icon, GdkEvent *event, void *data)
+static int indicator_clicked(GtkStatusIcon *icon, GdkEvent *event, void *data)
 {
-	StickynotesIndicator *indicator;
-	GHashTable *notes;
+	StickyNotesIndicator *indicator;
 
 	indicator = STICKYNOTES_INDICATOR(data);
-	notes = notes_application_get_notes(application);
 
 	switch (event->button.button) {
 	case 1:
-		switch_notes_visibility(notes, indicator);
+		switch_notes_visibility(indicator->app, indicator);
 		break;
 
 	case 3:
@@ -125,16 +138,17 @@ static int button_press_event(GtkStatusIcon *icon, GdkEvent *event, void *data)
 
 static GtkStatusIcon *fallback(AppIndicator *app_inidcator)
 {
-	StickynotesIndicator *indicator;
+	StickyNotesIndicator *indicator;
 	GtkStatusIcon *icon;
 
 	indicator = STICKYNOTES_INDICATOR(app_inidcator);
 	icon = gtk_status_icon_new_from_icon_name(APPLICATION_ICON);
 
 	g_signal_connect(G_OBJECT(icon), "button-press-event",
-			 G_CALLBACK(button_press_event), indicator);
+			 G_CALLBACK(indicator_clicked), indicator);
 
 	indicator->icon = icon;
+	indicator->popup = create_popup_menu(indicator);
 
 	return icon;
 }
@@ -144,7 +158,11 @@ static void unfallback(AppIndicator *indicator, GtkStatusIcon *icon)
 	g_object_unref(icon);
 }
 
-static void stickynotes_indicator_class_init(StickynotesIndicatorClass *klass)
+static void sticky_notes_indicator_init(StickyNotesIndicator *indicator)
+{
+}
+
+static void sticky_notes_indicator_class_init(StickyNotesIndicatorClass *klass)
 {
 	AppIndicatorClass *indicator_class;
 
@@ -153,18 +171,22 @@ static void stickynotes_indicator_class_init(StickynotesIndicatorClass *klass)
 	indicator_class->unfallback = unfallback;
 }
 
-static void stickynotes_indicator_init(StickynotesIndicator *indicator)
+StickyNotesIndicator *sticky_notes_indicator_new(NotesApplication *app)
 {
-	indicator->popup = create_popup_menu();
+	StickyNotesIndicator *indicator;
+
+	indicator = g_object_new(STICKYNOTES_INDICATOR_TYPE, "id",
+				 APPLICATION_ID, "category", "Other",
+				 NULL);
+	indicator->app = app;
+
+	return indicator;
 }
 
-StickynotesIndicator *stickynotes_indicator_new()
+void sticky_notes_indicator_free(StickyNotesIndicator *indicator)
 {
-	return g_object_new(STICKYNOTES_INDICATOR_TYPE, "id", APPLICATION_ID,
-			    "category", "Other", NULL);
-}
+	if (indicator == NULL)
+		return;
 
-void stickynotes_indicator_free(StickynotesIndicator *indicator)
-{
 	g_object_unref(indicator);
 }

@@ -3,9 +3,11 @@
 #include "stickynote.h"
 #include "indicator.h"
 
+#define STYLESHEET_PATH RESOURCE_PATH "/stylesheet.css"
+
 struct _NotesApplication {
 	GtkApplication parent;
-	StickynotesIndicator *indicator;
+	StickyNotesIndicator *indicator;
 	GSettings *settings;
 	GHashTable *notes;
 };
@@ -14,21 +16,9 @@ struct _NotesApplicationClass {
 	GtkApplicationClass parent_class;
 };
 
-NotesApplication *application = NULL;
-
 G_DEFINE_TYPE(NotesApplication, notes_application, GTK_TYPE_APPLICATION);
 
-
-static void action_new(GSimpleAction *action, GVariant *param, void *userdata)
-{
-	notes_application_create_note(application);
-}
-
-static GActionEntry actions[] = {
-	{"new", action_new}
-};
-
-static void update_note_list(NotesApplication *app)
+static void update_notes_list(NotesApplication *app)
 {
 	const char **keys;
 
@@ -37,37 +27,22 @@ static void update_note_list(NotesApplication *app)
 	free(keys);
 }
 
-static StickyNote *create_note(NotesApplication *application, const char *name)
+static void generate_unique_name(char *buf, GHashTable *notes)
 {
-	StickyNote *note;
+	unsigned int i;
 
-	note = stickynote_new(name);
-	gtk_widget_show(GTK_WIDGET(note));
-	g_hash_table_insert(application->notes, strdup(name), note);
-
-	return note;
-}
-
-StickyNote *notes_application_open_note(NotesApplication *application,
-					const char *name)
-{
-	StickyNote *note;
-
-	note = g_hash_table_lookup(application->notes, name);
-	if (note) {
-		return note;
+	for (i = 1; i; i++) {
+		sprintf(buf, "note-%d", i);
+		if (g_hash_table_lookup(notes, buf) == NULL) {
+			return;
+		}
 	}
-
-	note = create_note(application, name);
-	update_note_list(application);
-
-	return note;
 }
 
 static void generate_initial_title(char *ptr)
 {
-	time_t t;
 	struct tm *local;
+	time_t t;
 
 	time(&t);
 	local = localtime(&t);
@@ -75,91 +50,136 @@ static void generate_initial_title(char *ptr)
 	strftime(ptr, 32, "%Y-%m-%d", local);
 }
 
-StickyNote *notes_application_create_note(NotesApplication *application)
+static void note_destroy(StickyNote *note, void *data)
+{
+	NotesApplication *app = data;
+	const char *name;
+
+	name = stickynote_get_name(note);
+	g_hash_table_remove(app->notes, name);
+
+	update_notes_list(app);
+}
+
+static StickyNote *load_note(NotesApplication *app, const char *name)
 {
 	StickyNote *note;
-	unsigned int i;
-	char buf[32];
 
-	for (i = 1; i; i++) {
-		snprintf(buf, sizeof(buf), "note-%d", i);
-		if (g_hash_table_lookup(application->notes, buf) == NULL) {
-			break;
-		}
-	}
+	note = stickynote_new(name);
+	g_hash_table_insert(app->notes, strdup(name), note);
 
-	note = notes_application_open_note(application, buf);
-	generate_initial_title(buf);
-	g_object_set(G_OBJECT(note), "title", buf, NULL);
+	g_signal_connect(G_OBJECT(note), "destroy",
+			 G_CALLBACK(note_destroy),
+			 app);
+
+	gtk_widget_show(GTK_WIDGET(note));
 
 	return note;
 }
 
-void notes_application_close_note(NotesApplication *application,
-				  const char *name)
-{
-	g_hash_table_remove(application->notes, name);
-	update_note_list(application);
-}
-
-static void load_notes(NotesApplication *application)
+static void load_notes(NotesApplication *app)
 {
 	unsigned int i;
 	char **names;
 
-	names = g_settings_get_strv(application->settings, "note-list");
+	names = g_settings_get_strv(app->settings, "note-list");
 	for (i = 0; names[i]; i++) {
-		create_note(application, names[i]);
+		load_note(app, names[i]);
 	}
 
 	g_strfreev(names);
 }
 
-static void load_stylesheet()
+static StickyNote *create_note(NotesApplication *app)
+{
+	StickyNote *note;
+	char buf[32];
+
+	generate_unique_name(buf, app->notes);
+	note = load_note(app, buf);
+
+	generate_initial_title(buf);
+	g_object_set(G_OBJECT(note), "title", buf, NULL);
+
+	update_notes_list(app);
+
+	return note;
+}
+
+static void action_new(GSimpleAction *action, GVariant *param, void *data)
+{
+	NotesApplication *app;
+
+	app = NOTES_APPLICATION(data);
+	create_note(app);
+}
+
+static GActionEntry actions[] = {
+	{"new", action_new}
+};
+
+static void create_css_provider()
 {
 	GtkCssProvider *provider;
 
 	provider = gtk_css_provider_new();
-	gtk_css_provider_load_from_resource(provider, RESOURCE_PATH "/stylesheet.css");
-
+	gtk_css_provider_load_from_resource(provider, STYLESHEET_PATH);
 	gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
-				GTK_STYLE_PROVIDER(provider),
-				GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+				GTK_STYLE_PROVIDER(provider), 600);
 }
 
-static void notes_application_init(NotesApplication *application)
+static void activate_notes(NotesApplication *app)
 {
-	GSettings *settings;
-	GHashTable *notes;
+	GtkWindow *window;
+	GList *walk;
 
-	settings = g_settings_new(APPLICATION_ID);
-	notes = g_hash_table_new_full(g_str_hash, g_str_equal, free,
-				      (GDestroyNotify) stickynote_free);
+	walk = g_hash_table_get_values(app->notes);
 
-	application->settings = settings;
-	application->notes = notes;
+	for (; walk; walk = walk->next) {
+		window = walk->data;
+
+		gtk_window_deiconify(window);
+		gtk_window_present(window);
+	}
+
+	g_list_free(walk);
 }
 
-static void notes_application_finalise(GObject *object)
+static void notes_application_init(NotesApplication *app)
 {
-	NotesApplication *application = NOTES_APPLICATION(object);
+}
 
-	g_object_unref(application->settings);
-	stickynotes_indicator_free(application->indicator);
-	g_hash_table_unref(application->notes);
+static void notes_application_startup(GApplication *application)
+{
+	GApplicationClass *app_class;
+	NotesApplication *app;
+
+	/* calls gtk_init() */
+	app_class = G_APPLICATION_CLASS(notes_application_parent_class);
+	app_class->startup(application);
+
+	app = NOTES_APPLICATION(application);
+	app->indicator = sticky_notes_indicator_new(app);
+	app->settings = g_settings_new(APPLICATION_ID);
+
+	g_action_map_add_action_entries(G_ACTION_MAP(app), actions,
+					G_N_ELEMENTS(actions), app);
+
+	app->notes = g_hash_table_new_full(g_str_hash, g_str_equal, free,
+					   (GDestroyNotify) stickynote_free);
+
+	create_css_provider();
+	load_notes(app);
 }
 
 static void notes_application_activate(GApplication *application)
 {
-	NotesApplication *app = NOTES_APPLICATION(application);
+	NotesApplication *app;
 
-	load_notes(app);
-	load_stylesheet();
-
-	app->indicator = stickynotes_indicator_new();
-
-	g_action_map_add_action_entries(G_ACTION_MAP(application),
-		actions, G_N_ELEMENTS(actions), NULL);
+	app = NOTES_APPLICATION(application);
+	if (app->notes) {
+		activate_notes(app);
+	}
 
 	g_application_hold(application);
 }
@@ -167,24 +187,19 @@ static void notes_application_activate(GApplication *application)
 static void notes_application_class_init(NotesApplicationClass *class)
 {
 	GApplicationClass *app_class;
-	GObjectClass *object_class;
 
 	app_class = G_APPLICATION_CLASS(class);
+	app_class->startup = notes_application_startup;
 	app_class->activate = notes_application_activate;
-
-	object_class = G_OBJECT_CLASS(class);
-	object_class->finalize = notes_application_finalise;
 }
 
 NotesApplication *notes_application_new(void)
 {
-	return g_object_new(NOTES_APPLICATION_TYPE,
-			    "application-id", APPLICATION_ID,
-			    "flags", G_APPLICATION_HANDLES_OPEN,
-			    NULL);
+	return g_object_new(NOTES_APPLICATION_TYPE, "application-id",
+			    APPLICATION_ID, NULL);
 }
 
-GHashTable *notes_application_get_notes(NotesApplication *application)
+GHashTable *notes_application_get_notes(NotesApplication *app)
 {
-	return application->notes;
+	return app->notes;
 }

@@ -199,7 +199,6 @@ static bool close_request(GtkWidget *widget, GdkEvent *event, StickyNote *note)
 	}
 
 	reset_settings(note);
-	notes_application_close_note(application, note->name);
 
 	return false;
 }
@@ -732,5 +731,13 @@ StickyNote *stickynote_new(const char *name)
 
 void stickynote_free(StickyNote *note)
 {
+	if (note == NULL)
+		return;
+
 	gtk_widget_destroy(GTK_WIDGET(note));
+}
+
+const char *stickynote_get_name(StickyNote *note)
+{
+	return note->name;
 }

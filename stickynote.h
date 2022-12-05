@@ -16,6 +16,7 @@ GType sticky_note_get_type(void);
 StickyNote *stickynote_new(const char *name);
 void stickynote_free(StickyNote *note);
 
+const char *stickynote_get_name(StickyNote *note);
 bool stickynote_has_default_colours(StickyNote *note);
 bool stickynote_has_default_font(StickyNote *note);
 
