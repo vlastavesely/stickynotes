@@ -7,10 +7,16 @@ LIBNAMES = gtk+-3.0 gtksourceview-3.0 ayatana-appindicator3-0.1 x11
 CFLAGS   = $(shell pkg-config --cflags $(LIBNAMES)) -Wall -O2 -Wno-deprecated-declarations
 LFLAGS   = $(shell pkg-config --libs $(LIBNAMES))
 
+ICONS_DIR = $(prefix)/usr/share/icons/hicolor
+
 OBJECTS = main.o application.o stickynote.o resources.o indicator.o properties.o
 
 
+.PHONY: all run clean
+
 all: stickynotes data/gschemas.compiled data/stickynotes.desktop
+
+run: all
 	GSETTINGS_SCHEMA_DIR=data ./stickynotes
 
 include $(wildcard *.d)
@@ -22,7 +28,8 @@ stickynotes: $(OBJECTS)
 	$(QUIET_CC) $(CC) -MMD -MP -c $< -o $@ $(CFLAGS)
 
 resources.c: res/*.ui res/*.png res/*.css res/resources.xml
-	$(QUIET_GEN) $(RESGEN) res/resources.xml --sourcedir=res --target=$@ --generate-source
+	$(QUIET_GEN) $(RESGEN) res/resources.xml --sourcedir=res	\
+		--target=$@ --generate-source
 
 data/gschemas.compiled: data/com.vlastavesely.stickynotes.gschema.xml
 	$(QUIET_GEN) $(SCHEMAGEN) data
@@ -30,22 +37,30 @@ data/gschemas.compiled: data/com.vlastavesely.stickynotes.gschema.xml
 data/%.desktop: data/%.desktop.in
 	$(QUIET_GEN) cat $< >$@; chmod +x $@
 
-install:
-	install -m 0755 stickynotes /usr/bin
-	install -m 0755 backup-stickynotes /usr/bin
-	install -m 0644 data/stickynotes.desktop /usr/share/applications
-	install -m 0644 data/icons/16.png -T /usr/share/icons/hicolor/16x16/apps/stickynotes.png
-	install -m 0644 data/icons/22.png -T /usr/share/icons/hicolor/22x22/apps/stickynotes.png
-	install -m 0644 data/icons/24.png -T /usr/share/icons/hicolor/24x24/apps/stickynotes.png
-	install -m 0644 data/icons/32.png -T /usr/share/icons/hicolor/32x32/apps/stickynotes.png
-	ln -sf /usr/share/applications/stickynotes.desktop /etc/xdg/autostart/stickynotes.desktop
-	gtk-update-icon-cache /usr/share/icons/hicolor
+.PHONY: install install-files uninstall uninstall-files regenerate-icon-cache
 
-uninstall:
-	$(RM) /usr/bin/stickynotes
-	$(RM) /usr/share/applications/stickynotes.desktop
-	$(RM) /usr/share/icons/hicolor/*/apps/stickynotes.png
-	unlink /etc/xdg/autostart/stickynotes.desktop
+install-files:
+	install -m 0755 stickynotes $(prefix)/usr/bin
+	install -m 0755 backup-stickynotes $(prefix)/usr/bin
+	install -m 0644 data/stickynotes.desktop $(prefix)/usr/share/applications
+	for s in 16 22 24 32; do					\
+		install -m 0644 data/icons/$$s.png			\
+			-T $(ICONS_DIR)/$$s'x'$$s/apps/stickynotes.png;	\
+	done
+	ln -sf /usr/share/applications/stickynotes.desktop		\
+		$(prefix)/etc/xdg/autostart/stickynotes.desktop
+
+uninstall-files:
+	$(RM) $(prefix)/usr/bin/stickynotes
+	$(RM) $(prefix)/usr/share/applications/stickynotes.desktop
+	$(RM) $(prefix)/usr/share/icons/hicolor/*/apps/stickynotes.png
+	unlink $(prefix)/etc/xdg/autostart/stickynotes.desktop
+
+install: install-files regenerate-icon-cache
+
+uninstall: uninstall-files regenerate-icon-cache
+
+regenerate-icon-cache:
 	gtk-update-icon-cache /usr/share/icons/hicolor
 
 clean:
