@@ -16,20 +16,19 @@ all: stickynotes data/gschemas.compiled data/stickynotes.desktop
 include $(wildcard *.d)
 
 stickynotes: $(OBJECTS)
-	$(CC) $^ -o $@ $(LFLAGS)
+	$(QUIET_LD) $(CC) $^ -o $@ $(LFLAGS)
 
 %.o: %.c
-	$(CC) -MMD -MP -c $< -o $@ $(CFLAGS)
+	$(QUIET_CC) $(CC) -MMD -MP -c $< -o $@ $(CFLAGS)
 
 resources.c: res/*.ui res/*.png res/*.css res/resources.xml
-	$(RESGEN) res/resources.xml --sourcedir=res --target=$@ --generate-source
+	$(QUIET_GEN) $(RESGEN) res/resources.xml --sourcedir=res --target=$@ --generate-source
 
 data/gschemas.compiled: data/com.vlastavesely.stickynotes.gschema.xml
-	$(SCHEMAGEN) data
+	$(QUIET_GEN) $(SCHEMAGEN) data
 
 data/%.desktop: data/%.desktop.in
-	cat $< >$@
-	chmod +x $@
+	$(QUIET_GEN) cat $< >$@; chmod +x $@
 
 install:
 	install -m 0755 stickynotes /usr/bin
@@ -52,3 +51,10 @@ uninstall:
 clean:
 	$(RM) stickynotes *.o *.d resources.c
 	$(RM) data/*.compiled data/*.desktop
+
+
+ifndef V
+QUIET_CC    = @echo "  CC     $@";
+QUIET_LD    = @echo "  CCLD   $@";
+QUIET_GEN   = @echo "  GEN    $@";
+endif
