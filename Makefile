@@ -27,9 +27,9 @@ stickynotes: $(OBJECTS)
 %.o: %.c
 	$(QUIET_CC) $(CC) -MMD -MP -c $< -o $@ $(CFLAGS)
 
-resources.c: res/*.ui res/*.png res/*.css res/resources.xml
-	$(QUIET_GEN) $(RESGEN) res/resources.xml --sourcedir=res	\
-		--target=$@ --generate-source
+resources.c: data/res/*.ui data/res/*.png data/res/*.css data/res/resources.xml
+	$(QUIET_GEN) $(RESGEN) data/res/resources.xml			\
+		--sourcedir=data/res --target=$@ --generate-source
 
 data/gschemas.compiled: data/com.vlastavesely.stickynotes.gschema.xml
 	$(QUIET_GEN) $(SCHEMAGEN) data
