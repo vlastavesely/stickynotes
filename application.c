@@ -128,12 +128,12 @@ static void create_css_provider()
 				GTK_STYLE_PROVIDER(provider), 600);
 }
 
-static void activate_notes(NotesApplication *app)
+static void activate_notes(GHashTable *notes)
 {
 	GtkWindow *window;
 	GList *walk;
 
-	walk = g_hash_table_get_values(app->notes);
+	walk = g_hash_table_get_values(notes);
 
 	for (; walk; walk = walk->next) {
 		window = walk->data;
@@ -178,7 +178,7 @@ static void notes_application_activate(GApplication *application)
 
 	app = NOTES_APPLICATION(application);
 	if (app->notes) {
-		activate_notes(app);
+		activate_notes(app->notes);
 	}
 
 	g_application_hold(application);

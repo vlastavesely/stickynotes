@@ -9,10 +9,10 @@ struct StickyNotePropertiesDialog {
 	GtkWidget *check_default_font;
 	GtkWidget *box_colours;
 	GtkWidget *box_font;
-	GtkWidget *title_entry;
-	GtkWidget *colour_button;
-	GtkWidget *font_colour_button;
-	GtkWidget *font_button;
+	GtkEntry *title_entry;
+	GtkColorChooser *colour_button;
+	GtkColorChooser *font_colour_button;
+	GtkFontChooser *font_button;
 	GtkWidget *close_button;
 };
 
@@ -117,7 +117,8 @@ static void default_colours_toggled(GtkToggleButton *button, void *data)
 	gtk_widget_set_sensitive(dialog->box_colours, sensitive);
 
 	if (sensitive == false) {
-		g_object_set(G_OBJECT(dialog->note), "colour", NULL, "font-colour", NULL, NULL);
+		g_object_set(G_OBJECT(dialog->note), "colour", NULL,
+			     "font-colour", NULL, NULL);
 	} else {
 		colour_set(dialog->colour_button, dialog);
 		font_colour_set(dialog->font_colour_button, dialog);
@@ -159,11 +160,11 @@ static void init_ui(StickyNotePropertiesDialog *dialog)
 	chooser_set_font(GTK_FONT_CHOOSER(dialog->font_button), note);
 
 	if (stickynote_has_default_colours(note)) {
-		gtk_toggle_button_set_active(dialog->check_default_colours, true);
+		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dialog->check_default_colours), true);
 	}
 
 	if (stickynote_has_default_font(note)) {
-		gtk_toggle_button_set_active(dialog->check_default_font, true);
+		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dialog->check_default_font), true);
 	}
 }
 

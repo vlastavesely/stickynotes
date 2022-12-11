@@ -500,43 +500,6 @@ static void get_property(GObject *object, unsigned int prop_id, GValue *value,
 	}
 }
 
-bool stickynote_has_default_colours(StickyNote *note)
-{
-	GVariant *value;
-	const char *str;
-	int ret = 0;
-
-	value = g_settings_get_default_value(note->settings, "colour");
-
-	str = g_variant_get_string(value, NULL);
-	if (strcmp(str, note->colour) == 0)
-		ret++;
-
-	g_variant_unref(value);
-
-	value = g_settings_get_default_value(note->settings, "font-colour");
-
-	str = g_variant_get_string(value, NULL);
-	if (strcmp(str, note->font_colour) == 0)
-		ret++;
-
-	g_variant_unref(value);
-
-	return ret == 2; /* both colours are default */
-}
-
-bool stickynote_has_default_font(StickyNote *note)
-{
-	GVariant *value;
-	int ret;
-
-	value = g_settings_get_default_value(note->settings, "font");
-	ret = strcmp(g_variant_get_string(value, NULL), note->font) == 0;
-	g_variant_unref(value);
-
-	return ret;
-}
-
 static GtkCssProvider *make_css_provider(StickyNote *note)
 {
 	GtkStyleContext *context;
@@ -654,23 +617,28 @@ static void stickynote_class_init(StickyNoteClass *klass)
 				RESOURCE_PATH "/stickynote.ui");
 
 	gtk_widget_class_bind_template_child(widget_class,
-					     StickyNote, title_label);
-	gtk_widget_class_bind_template_child(widget_class,
-					     StickyNote, lock_button);
-	gtk_widget_class_bind_template_child(widget_class,
-					     StickyNote, lock_image);
-	gtk_widget_class_bind_template_child(widget_class,
-					     StickyNote, close_button);
+				StickyNote, title_label);
 
 	gtk_widget_class_bind_template_child(widget_class,
-					     StickyNote, move_box);
-	gtk_widget_class_bind_template_child(widget_class,
-					     StickyNote, resize_sw);
-	gtk_widget_class_bind_template_child(widget_class,
-					     StickyNote, resize_se);
+				StickyNote, lock_button);
 
 	gtk_widget_class_bind_template_child(widget_class,
-					     StickyNote, text_view_area);
+				StickyNote, lock_image);
+
+	gtk_widget_class_bind_template_child(widget_class,
+				StickyNote, close_button);
+
+	gtk_widget_class_bind_template_child(widget_class,
+				StickyNote, move_box);
+
+	gtk_widget_class_bind_template_child(widget_class,
+				StickyNote, resize_sw);
+
+	gtk_widget_class_bind_template_child(widget_class,
+				StickyNote, resize_se);
+
+	gtk_widget_class_bind_template_child(widget_class,
+				StickyNote, text_view_area);
 
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
@@ -740,4 +708,41 @@ void stickynote_free(StickyNote *note)
 const char *stickynote_get_name(StickyNote *note)
 {
 	return note->name;
+}
+
+bool stickynote_has_default_colours(StickyNote *note)
+{
+	GVariant *value;
+	const char *str;
+	int ret = 0;
+
+	value = g_settings_get_default_value(note->settings, "colour");
+
+	str = g_variant_get_string(value, NULL);
+	if (strcmp(str, note->colour) == 0)
+		ret++;
+
+	g_variant_unref(value);
+
+	value = g_settings_get_default_value(note->settings, "font-colour");
+
+	str = g_variant_get_string(value, NULL);
+	if (strcmp(str, note->font_colour) == 0)
+		ret++;
+
+	g_variant_unref(value);
+
+	return ret == 2; /* both colours are default */
+}
+
+bool stickynote_has_default_font(StickyNote *note)
+{
+	GVariant *value;
+	int ret;
+
+	value = g_settings_get_default_value(note->settings, "font");
+	ret = strcmp(g_variant_get_string(value, NULL), note->font) == 0;
+	g_variant_unref(value);
+
+	return ret;
 }
