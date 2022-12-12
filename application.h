@@ -2,6 +2,7 @@
 #define __NOTES_APPLICATION_H
 
 #include <gtk/gtk.h>
+#include <stdbool.h>
 #include "stickynote.h"
 
 #define NOTES_APPLICATION_TYPE						\

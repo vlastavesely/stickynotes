@@ -6,6 +6,10 @@
       <summary>List of notes</summary>
       <description>List of notes known to the program.</description>
     </key>
+    <key name="sticky" type="b">
+      <default>false</default>
+      <summary>Whether the notes should be shown on all workspaces</summary>
+    </key>
   </schema>
   <schema id="com.vlastavesely.stickynotes.note">
     <key name="title" type="s">

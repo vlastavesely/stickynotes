@@ -10,11 +10,19 @@ struct _NotesApplication {
 	StickyNotesIndicator *indicator;
 	GSettings *settings;
 	GHashTable *notes;
+	bool sticky;
 };
 
 struct _NotesApplicationClass {
 	GtkApplicationClass parent_class;
 };
+
+enum {
+	PROP_STICKY = 1,
+	N_PROPERTIES
+};
+
+static GParamSpec *obj_properties[N_PROPERTIES] = {NULL};
 
 G_DEFINE_TYPE(NotesApplication, notes_application, GTK_TYPE_APPLICATION);
 
@@ -106,6 +114,22 @@ static StickyNote *create_note(NotesApplication *app)
 	return note;
 }
 
+static void update_notes_stickiness(GHashTable *notes, bool sticky)
+{
+	GList *value;
+	GtkWindow *window;
+
+	value = g_hash_table_get_values(notes);
+	for (; value; value = value->next) {
+		window = value->data;
+		if (sticky) {
+			gtk_window_stick(window);
+		} else {
+			gtk_window_unstick(window);
+		}
+	}
+}
+
 static void action_new(GSimpleAction *action, GVariant *param, void *data)
 {
 	NotesApplication *app;
@@ -117,6 +141,21 @@ static void action_new(GSimpleAction *action, GVariant *param, void *data)
 static GActionEntry actions[] = {
 	{"new", action_new}
 };
+
+static void register_settings_action(GActionMap *map, GSettings *settings,
+				     const char *name)
+{
+	GAction *action;
+
+	action = g_settings_create_action(settings, name);
+	g_action_map_add_action(map, action);
+	g_object_unref(action);
+}
+
+static void register_settings_actions(GActionMap *map, GSettings *settings)
+{
+	register_settings_action(map, settings, "sticky");
+}
 
 static void create_css_provider()
 {
@@ -145,6 +184,39 @@ static void activate_notes(GHashTable *notes)
 	g_list_free(walk);
 }
 
+static void set_property(GObject *object, unsigned int prop_id,
+			 const GValue *value, GParamSpec *pspec)
+{
+	NotesApplication *app = NOTES_APPLICATION(object);
+
+	switch (prop_id) {
+	case PROP_STICKY:
+		app->sticky = g_value_get_boolean(value);
+		update_notes_stickiness(app->notes, app->sticky);
+		break;
+
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+		break;
+	}
+}
+
+static void get_property(GObject *object, unsigned int prop_id, GValue *value,
+			 GParamSpec *pspec)
+{
+	NotesApplication *app = NOTES_APPLICATION(object);
+
+	switch (prop_id) {
+	case PROP_STICKY:
+		g_value_set_boolean(value, app->sticky);
+		break;
+
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+		break;
+	}
+}
+
 static void notes_application_init(NotesApplication *app)
 {
 }
@@ -164,12 +236,18 @@ static void notes_application_startup(GApplication *application)
 
 	g_action_map_add_action_entries(G_ACTION_MAP(app), actions,
 					G_N_ELEMENTS(actions), app);
+	register_settings_actions(G_ACTION_MAP(app), app->settings);
 
 	app->notes = g_hash_table_new_full(g_str_hash, g_str_equal, free,
 					   (GDestroyNotify) stickynote_free);
 
+	g_settings_bind(app->settings, "sticky", app, "sticky",
+			G_SETTINGS_BIND_DEFAULT);
+
 	create_css_provider();
 	load_notes(app);
+
+	update_notes_stickiness(app->notes, app->sticky);
 }
 
 static void notes_application_activate(GApplication *application)
@@ -187,10 +265,23 @@ static void notes_application_activate(GApplication *application)
 static void notes_application_class_init(NotesApplicationClass *class)
 {
 	GApplicationClass *app_class;
+	GObjectClass *object_class;
 
 	app_class = G_APPLICATION_CLASS(class);
 	app_class->startup = notes_application_startup;
 	app_class->activate = notes_application_activate;
+
+	object_class = G_OBJECT_CLASS(class);
+	object_class->get_property = get_property;
+	object_class->set_property = set_property;
+
+	obj_properties[PROP_STICKY] =
+		g_param_spec_boolean("sticky", "Sticky",
+				     "Whether the notes should be shown on all workspaces",
+				     TRUE, G_PARAM_READWRITE);
+
+	g_object_class_install_properties(object_class, N_PROPERTIES,
+					  obj_properties);
 }
 
 NotesApplication *notes_application_new(void)

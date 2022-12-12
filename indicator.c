@@ -25,6 +25,10 @@ static const char *menu_str =
 	"        <attribute name=\"label\">New note</attribute>"
 	"        <attribute name=\"action\">app.new</attribute>"
 	"      </item>"
+	"      <item>"
+	"        <attribute name=\"label\">Stick to all workspaces</attribute>"
+	"        <attribute name=\"action\">app.sticky</attribute>"
+	"      </item>"
 	"    </section>"
 	"  </menu>"
 	"</interface>";
