@@ -7,8 +7,6 @@ LIBNAMES = gtk+-3.0 gtksourceview-3.0 ayatana-appindicator3-0.1 x11
 CFLAGS   = $(shell pkg-config --cflags $(LIBNAMES)) -Wall -O2 -Wno-deprecated-declarations
 LFLAGS   = $(shell pkg-config --libs $(LIBNAMES))
 
-ICONS_DIR = $(prefix)/usr/share/icons/hicolor
-
 OBJECTS = main.o application.o stickynote.o resources.o indicator.o properties.o
 
 
@@ -43,11 +41,9 @@ install-files:
 	install -m 0755 stickynotes $(prefix)/usr/bin
 	install -m 0755 backup-stickynotes $(prefix)/usr/bin
 	install -m 0644 data/stickynotes.desktop $(prefix)/usr/share/applications
-	for s in 16 22 24 32; do					\
-		install -m 0644 data/icons/$$s.png			\
-			-T $(ICONS_DIR)/$$s'x'$$s/apps/stickynotes.png;	\
-	done
-	ln -sf /usr/share/applications/stickynotes.desktop		\
+	install -m 0644 data/com.vlastavesely.stickynotes.gschema.xml $(prefix)/usr/share/glib-2.0/schemas
+	cp -r data/hicolor -T $(prefix)/usr/share/icons/hicolor
+	ln -sf /usr/share/applications/stickynotes.desktop	\
 		$(prefix)/etc/xdg/autostart/stickynotes.desktop
 
 uninstall-files:
