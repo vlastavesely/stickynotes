@@ -1,0 +1,55 @@
+.TH "backup-stickynotes" "1" "15 December 2022" "stickynotes" "Sticky Notes"
+
+.SH NAME
+.B backup-stickynotes
+- dump (or restore) sticky notes
+
+
+.SH SYNOPSIS
+.SY backup-stickynotes
+.br
+.SY backup-stickynotes
+.RB [ -r
+.IR FILE ]
+.YS
+
+
+.SH DESCRIPTION
+.B backup-stickynotes
+is a console tool for dumping and restoration of the sticky notes. By default,
+it dumps the notes as an
+.I XML
+file to the standard output. When the
+.B -r
+option is specified, it attempts to restore notes from a dump file.
+
+
+.SH OPTIONS
+.BR \-r
+.I FILE
+.RS 4
+An
+.I XML
+file with the notes to be restored.
+.RE
+
+
+.SH REPORTING BUGS
+If you encounter a bug, you should make sure that you are using the latest
+version of the software. If you are and the bug is still present, you can
+report it on the GitHub issues tracker:
+.IR https://github.com/vlastavesely/stickynotes/issues .
+
+
+.SH LICENSE AND WARRANTY
+Copyright © 2022  Vlasta Vesely
+.RI < vlastavesely@protonmail.ch >.
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License version 2 as published by the
+Free Software Foundation.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
