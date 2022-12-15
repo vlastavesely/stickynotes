@@ -1,13 +1,36 @@
-CC        = gcc
+CC        = @CC@
 RM        = rm -f
 RESGEN    = glib-compile-resources
 SCHEMAGEN = glib-compile-schemas
 
-LIBNAMES = gtk+-3.0 gtksourceview-3.0 ayatana-appindicator3-0.1 x11
-CFLAGS   = $(shell pkg-config --cflags $(LIBNAMES)) -Wall -O2 -Wno-deprecated-declarations
-LFLAGS   = $(shell pkg-config --libs $(LIBNAMES))
+INSTALL         = @INSTALL@
+INSTALL_DATA    = @INSTALL_DATA@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+
+GTK_CFLAGS = @GTK_CFLAGS@
+GTK_LFLAGS = @GTK_LIBS@
+
+GSV_CFLAGS = @GSV_CFLAGS@
+GSV_LFLAGS = @GSV_LIBS@
+
+INDICATOR_CFLAGS = @INDICATOR_CFLAGS@
+INDICATOR_LFLAGS = @INDICATOR_LIBS@
+
+X11_CFLAGS = @X11_CFLAGS@
+X11_LFLAGS = @X11_LIBS@
+
+CFLAGS = $(GTK_CFLAGS) $(GSV_CFLAGS) $(INDICATOR_CFLAGS) $(X11_CFLAGS) -Wall -O2
+LFLAGS = $(GTK_LFLAGS) $(GSV_LFLAGS) $(INDICATOR_LFLAGS) $(X11_LFLAGS)
+
+# Indicator has deprectaed functions...
+CFLAGS += -Wno-deprecated-declarations
 
 OBJECTS = main.o application.o stickynote.o resources.o indicator.o properties.o
+
+AUX_FILES =								\
+	Makefile configure configure.scan autom4te.cache autoscan.log	\
+	aclocal.m4 config.log config.status config.guess config.sub	\
+	config.h config.h.in config.h.in~ install-sh
 
 
 .PHONY: all run clean
@@ -38,10 +61,10 @@ data/%.desktop: data/%.desktop.in
 .PHONY: install install-files uninstall uninstall-files regenerate-icon-cache
 
 install-files:
-	install -m 0755 stickynotes $(prefix)/usr/bin
-	install -m 0755 backup-stickynotes $(prefix)/usr/bin
-	install -m 0644 data/stickynotes.desktop $(prefix)/usr/share/applications
-	install -m 0644 data/com.vlastavesely.stickynotes.gschema.xml $(prefix)/usr/share/glib-2.0/schemas
+	$(INSTALL_PROGRAM) stickynotes $(prefix)/usr/bin
+	$(INSTALL_PROGRAM) backup-stickynotes $(prefix)/usr/bin
+	$(INSTALL_DATA) data/stickynotes.desktop $(prefix)/usr/share/applications
+	$(INSTALL_DATA) data/com.vlastavesely.stickynotes.gschema.xml $(prefix)/usr/share/glib-2.0/schemas
 	cp -r data/hicolor -T $(prefix)/usr/share/icons/hicolor
 	ln -sf /usr/share/applications/stickynotes.desktop	\
 		$(prefix)/etc/xdg/autostart/stickynotes.desktop
@@ -62,6 +85,11 @@ regenerate-icon-cache:
 clean:
 	$(RM) stickynotes *.o *.d resources.c
 	$(RM) data/*.compiled data/*.desktop
+
+clean-aux:
+	$(RM) -r $(AUX_FILES)
+
+distclean: clean clean-aux
 
 
 ifndef V
