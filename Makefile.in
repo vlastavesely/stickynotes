@@ -7,6 +7,12 @@ INSTALL         = @INSTALL@
 INSTALL_DATA    = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 
+prefix       = @prefix@
+exec_prefix  = @exec_prefix@
+bindir       = @bindir@
+mandir       = @mandir@
+datarootdir  = @datarootdir@
+
 GTK_CFLAGS = @GTK_CFLAGS@
 GTK_LFLAGS = @GTK_LIBS@
 
@@ -35,7 +41,8 @@ AUX_FILES =								\
 
 .PHONY: all run clean
 
-all: stickynotes data/gschemas.compiled data/stickynotes.desktop
+all: stickynotes data/gschemas.compiled data/stickynotes.desktop	\
+	backup-stickynotes.1.gz
 
 run: all
 	GSETTINGS_SCHEMA_DIR=data ./stickynotes
@@ -58,32 +65,35 @@ data/gschemas.compiled: data/com.vlastavesely.stickynotes.gschema.xml
 data/%.desktop: data/%.desktop.in
 	$(QUIET_GEN) cat $< >$@; chmod +x $@
 
+%.1.gz: %.1
+	$(QUIET_GEN) cat $< | gzip -f >$@
+
 .PHONY: install install-files uninstall uninstall-files regenerate-icon-cache
 
 install-files:
-	$(INSTALL_PROGRAM) stickynotes $(prefix)/usr/bin
-	$(INSTALL_PROGRAM) backup-stickynotes $(prefix)/usr/bin
-	$(INSTALL_DATA) data/stickynotes.desktop $(prefix)/usr/share/applications
-	$(INSTALL_DATA) data/com.vlastavesely.stickynotes.gschema.xml $(prefix)/usr/share/glib-2.0/schemas
-	cp -r data/hicolor -T $(prefix)/usr/share/icons/hicolor
-	ln -sf /usr/share/applications/stickynotes.desktop	\
-		$(prefix)/etc/xdg/autostart/stickynotes.desktop
+	mkdir -p $(bindir) $(mandir)/man1
+	mkdir -p $(datarootdir)/applications $(datarootdir)/glib-2.0/schemas $(datarootdir)/icons
+	$(INSTALL_PROGRAM) backup-stickynotes stickynotes $(bindir)
+	$(INSTALL_DATA) data/stickynotes.desktop $(datarootdir)/applications
+	$(INSTALL_DATA) data/com.vlastavesely.stickynotes.gschema.xml $(datarootdir)/glib-2.0/schemas
+	$(INSTALL_DATA) backup-stickynotes.1.gz $(mandir)/man1
+	cp -r data/hicolor -T $(datarootdir)/icons/hicolor
 
 uninstall-files:
-	$(RM) $(prefix)/usr/bin/stickynotes
-	$(RM) $(prefix)/usr/share/applications/stickynotes.desktop
-	$(RM) $(prefix)/usr/share/icons/hicolor/*/apps/stickynotes.png
-	unlink $(prefix)/etc/xdg/autostart/stickynotes.desktop
+	$(RM) $(bindir)/stickynotes $(bindir)/backup-stickynotes
+	$(RM) $(mandir)/man1/backup-stickynotes.1.gz
+	$(RM) $(datarootdir)/applications/stickynotes.desktop
+	$(RM) $(datarootdir)/icons/hicolor/*/apps/stickynotes.png
+
+regenerate-icon-cache:
+	gtk-update-icon-cache $(datarootdir)/icons/hicolor
 
 install: install-files regenerate-icon-cache
 
 uninstall: uninstall-files regenerate-icon-cache
 
-regenerate-icon-cache:
-	gtk-update-icon-cache /usr/share/icons/hicolor
-
 clean:
-	$(RM) stickynotes *.o *.d resources.c
+	$(RM) stickynotes *.o *.d resources.c backup-stickynotes.1.gz
 	$(RM) data/*.compiled data/*.desktop
 
 clean-aux:
