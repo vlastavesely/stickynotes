@@ -217,6 +217,14 @@ static void get_property(GObject *object, unsigned int prop_id, GValue *value,
 	}
 }
 
+static void register_local_icons_theme()
+{
+	GtkIconTheme *theme;
+
+	theme = gtk_icon_theme_get_default();
+	gtk_icon_theme_prepend_search_path(theme, "share");
+}
+
 static void notes_application_init(NotesApplication *app)
 {
 }
@@ -229,6 +237,8 @@ static void notes_application_startup(GApplication *application)
 	/* calls gtk_init() */
 	app_class = G_APPLICATION_CLASS(notes_application_parent_class);
 	app_class->startup(application);
+
+	register_local_icons_theme();
 
 	app = NOTES_APPLICATION(application);
 	app->indicator = sticky_notes_indicator_new(app);
