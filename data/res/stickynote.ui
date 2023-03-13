@@ -84,6 +84,7 @@
         </child>
         <child>
           <object class="GtkScrolledWindow" id="text_view_area">
+            <property name="name">text_view_area</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="shadow-type">in</property>
