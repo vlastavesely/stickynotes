@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([stickynotes], [0.1], [vlastavesely@protonmail.ch])
+AC_INIT([stickynotes], [1.0], [vlastavesely@protonmail.ch])
 AC_CONFIG_SRCDIR([application.h])
 AC_CONFIG_HEADERS([config.h])
 
