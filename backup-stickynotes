@@ -34,6 +34,9 @@ def dump():
 		elem.set('font-colour', str(note.get_string('font-colour')))
 		elem.set('font', str(note.get_string('font')))
 
+		elem.set('locked', '1' if note.get_boolean('locked') else '0')
+		elem.set('fixed', '1' if note.get_boolean('fixed') else '0')
+
 		elem.text = str(note.get_string('text'))
 
 	print('<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>')
@@ -60,7 +63,10 @@ def restore(filename):
 		note.set_string('font-colour', elem.get('font-colour'))
 		note.set_string('font', elem.get('font'))
 
-		note.set_string('text', elem.text)
+		note.set_boolean('locked', True if elem.get('locked') == '1' else False)
+		note.set_boolean('fixed', True if elem.get('fixed') == '1' else False)
+
+		note.set_string('text', str(elem.text) if elem.text else '')
 		note.sync()
 
 		names.append(name)
