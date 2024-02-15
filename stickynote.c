@@ -38,6 +38,7 @@ struct StickyNote {
 	GtkWidget *text_view;
 	int width, height, x, y;
 	bool locked;
+	bool fixed;
 	char *colour, *font_colour, *font;
 };
 
@@ -54,6 +55,7 @@ enum {
 	PROP_X,
 	PROP_Y,
 	PROP_LOCKED,
+	PROP_FIXED,
 	PROP_COLOUR,
 	PROP_FONT_COLOUR,
 	PROP_FONT,
@@ -126,6 +128,9 @@ static bool stickynote_resize(GtkWidget *widget, GdkEventButton *event,
 	if (event->type != GDK_BUTTON_PRESS || event->button != 1)
 		return false;
 
+	if (note->fixed == true)
+		return false;
+
 	edge = (widget == note->resize_se) ? GDK_WINDOW_EDGE_SOUTH_EAST
 		: GDK_WINDOW_EDGE_SOUTH_WEST;
 
@@ -139,6 +144,9 @@ static bool stickynote_move(GtkWidget *widget, GdkEventButton *event,
 			    StickyNote *note)
 {
 	if (event->type != GDK_BUTTON_PRESS || event->button != 1)
+		return false;
+
+	if (note->fixed == true)
 		return false;
 
 	gtk_window_begin_move_drag(GTK_WINDOW(note), event->button,
@@ -264,6 +272,9 @@ static void update_ui(StickyNote *note)
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(note->text_view), !locked);
 	gtk_image_set_from_resource(GTK_IMAGE(note->lock_image),
 				    locked ? LOCKED_ICON : UNLOCKED_ICON);
+
+	gtk_widget_set_visible(note->resize_sw, !note->fixed);
+	gtk_widget_set_visible(note->resize_se, !note->fixed);
 }
 
 static const char *get_font_style(unsigned int style)
@@ -437,6 +448,11 @@ static void set_property(GObject *object, unsigned int prop_id,
 		update_ui(note);
 		break;
 
+	case PROP_FIXED:
+		note->fixed = g_value_get_boolean(value);
+		update_ui(note);
+		break;
+
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
@@ -492,6 +508,10 @@ static void get_property(GObject *object, unsigned int prop_id, GValue *value,
 
 	case PROP_LOCKED:
 		g_value_set_boolean(value, note->locked);
+		break;
+
+	case PROP_FIXED:
+		g_value_set_boolean(value, note->fixed);
 		break;
 
 	default:
@@ -603,6 +623,9 @@ static void constructed(GObject *object)
 	g_settings_bind(settings, "locked", note, "locked",
 			G_SETTINGS_BIND_DEFAULT);
 
+	g_settings_bind(settings, "fixed", note, "fixed",
+			G_SETTINGS_BIND_DEFAULT);
+
 	note->constructed = true;
 	update_geometry(note);
 	update_ui(note);
@@ -688,6 +711,9 @@ static void stickynote_class_init(StickyNoteClass *klass)
 	obj_properties[PROP_LOCKED] = g_param_spec_boolean("locked", "Locked",
 			"Whether the note is locked", 0, G_PARAM_READWRITE);
 
+	obj_properties[PROP_FIXED] = g_param_spec_boolean("fixed", "Fixed",
+			"Whether the window is fixed", 0, G_PARAM_READWRITE);
+
 	g_object_class_install_properties(object_class, N_PROPERTIES,
 					  obj_properties);
 }
@@ -745,4 +771,9 @@ bool stickynote_has_default_font(StickyNote *note)
 	g_variant_unref(value);
 
 	return ret;
+}
+
+bool stickynote_is_fixed(StickyNote *note)
+{
+	return note->fixed;
 }

@@ -19,5 +19,6 @@ void stickynote_free(StickyNote *note);
 const char *stickynote_get_name(StickyNote *note);
 bool stickynote_has_default_colours(StickyNote *note);
 bool stickynote_has_default_font(StickyNote *note);
+bool stickynote_is_fixed(StickyNote *note);
 
 #endif /* __STICKYNOTE_H */

@@ -52,5 +52,9 @@
       <default>false</default>
       <summary>Whether the note is locked</summary>
     </key>
+    <key name="fixed" type="b">
+      <default>false</default>
+      <summary>Whether the window geometry is fixed</summary>
+    </key>
   </schema>
 </schemalist>

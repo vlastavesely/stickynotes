@@ -7,6 +7,7 @@ struct StickyNotePropertiesDialog {
 	StickyNote *note;
 	GtkWidget *check_default_colours;
 	GtkWidget *check_default_font;
+	GtkWidget *check_fixed;
 	GtkWidget *box_colours;
 	GtkWidget *box_font;
 	GtkEntry *title_entry;
@@ -140,6 +141,15 @@ static void default_font_toggled(GtkToggleButton *button, void *data)
 	}
 }
 
+static void default_fixed(GtkToggleButton *button, void *data)
+{
+	StickyNotePropertiesDialog *dialog = data;
+	bool fixed;
+
+	fixed = gtk_toggle_button_get_active(button);
+	g_object_set(G_OBJECT(dialog->note), "fixed", fixed, NULL);
+}
+
 static void init_ui(StickyNotePropertiesDialog *dialog)
 {
 	StickyNote *note = dialog->note;
@@ -165,6 +175,10 @@ static void init_ui(StickyNotePropertiesDialog *dialog)
 
 	if (stickynote_has_default_font(note)) {
 		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dialog->check_default_font), true);
+	}
+
+	if (stickynote_is_fixed(note)) {
+		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dialog->check_fixed), true);
 	}
 }
 
@@ -212,6 +226,9 @@ static void sticky_note_properties_dialog_init(StickyNotePropertiesDialog *dialo
 
 	g_signal_connect(G_OBJECT(dialog->check_default_font), "toggled",
 			 G_CALLBACK(default_font_toggled), dialog);
+
+	g_signal_connect(G_OBJECT(dialog->check_fixed), "toggled",
+			 G_CALLBACK(default_fixed), dialog);
 }
 
 static void sticky_note_properties_dialog_class_init(StickyNotePropertiesDialogClass *klass)
@@ -227,6 +244,9 @@ static void sticky_note_properties_dialog_class_init(StickyNotePropertiesDialogC
 
 	gtk_widget_class_bind_template_child(widget_class,
 			StickyNotePropertiesDialog, check_default_font);
+
+	gtk_widget_class_bind_template_child(widget_class,
+			StickyNotePropertiesDialog, check_fixed);
 
 	gtk_widget_class_bind_template_child(widget_class,
 			StickyNotePropertiesDialog, box_colours);
