@@ -98,6 +98,29 @@ static void load_notes(NotesApplication *app)
 	g_strfreev(names);
 }
 
+static void update_note_stickiness(StickyNote *note, bool sticky)
+{
+	GtkWindow *window = (GtkWindow *) note;
+
+	if (sticky) {
+		gtk_window_stick(window);
+	} else {
+		gtk_window_unstick(window);
+	}
+}
+
+static void update_notes_stickiness(GHashTable *notes, bool sticky)
+{
+	GList *value;
+	StickyNote *note;
+
+	value = g_hash_table_get_values(notes);
+	for (; value; value = value->next) {
+		note = value->data;
+		update_note_stickiness(note, sticky);
+	}
+}
+
 static StickyNote *create_note(NotesApplication *app)
 {
 	StickyNote *note;
@@ -108,26 +131,11 @@ static StickyNote *create_note(NotesApplication *app)
 
 	generate_initial_title(buf);
 	g_object_set(G_OBJECT(note), "title", buf, NULL);
+	update_note_stickiness(note, app->sticky);
 
 	update_notes_list(app);
 
 	return note;
-}
-
-static void update_notes_stickiness(GHashTable *notes, bool sticky)
-{
-	GList *value;
-	GtkWindow *window;
-
-	value = g_hash_table_get_values(notes);
-	for (; value; value = value->next) {
-		window = value->data;
-		if (sticky) {
-			gtk_window_stick(window);
-		} else {
-			gtk_window_unstick(window);
-		}
-	}
 }
 
 static void action_new(GSimpleAction *action, GVariant *param, void *data)
